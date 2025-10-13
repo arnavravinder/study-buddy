@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Buddy - Student Application</title>
+    <link rel="stylesheet" href="styles/mentee-application.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="16" fill="#14b8a6"/>
+                        <path d="M12 12h8v2h-8v-2zm0 4h8v2h-8v-2zm0 4h6v2h-6v-2z" fill="white"/>
+                    </svg>
+                    <h1>Study Buddy</h1>
+                </div>
+                <p class="subtitle">Join as a Student</p>
+            </div>
+
+            <div class="progress-bar" v-if="currentStep > 0 && !submitted">
+                <div class="progress-fill" :style="{width: progress + '%'}"></div>
+            </div>
+
+            <div v-if="currentStep === 0" class="welcome-slide">
+                <div class="welcome-content">
+                    <h2>Student Onboarding</h2>
+                    <p>Welcome to Study Buddy! Let's find you the perfect study partner to help you succeed academically.</p>
+                    <button @click="startApplication" @keydown.enter="startApplication" class="start-btn" autofocus>
+                        Start Application
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form @submit.prevent="handleSubmit" class="form" v-if="currentStep > 0 && !submitted">
+                <div v-if="currentStep === 1" class="step">
+                    <div class="question">
+                        <h2>What grade are you in?</h2>
+                        <p>This helps us match you with the right study partners</p>
+                    </div>
+                    <div class="grade-grid">
+                        <button type="button" 
+                                v-for="grade in [6,7,8,9,10,11]" 
+                                :key="grade"
+                                @click="formData.grade = grade"
+                                :class="['grade-btn', {active: formData.grade === grade}]">
+                            Grade {{ grade }}
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="currentStep === 2" class="step">
+                    <div class="question">
+                        <h2>Which subjects do you need help with?</h2>
+                        <p>Select all that apply</p>
+                    </div>
+                    <div class="subjects-grid">
+                        <button type="button" 
+                                v-for="subject in availableSubjects" 
+                                :key="subject"
+                                @click="toggleSubject(subject)"
+                                :class="['subject-btn', {active: formData.subjects.includes(subject)}]">
+                            {{ subject }}
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="currentStep === 3" class="step">
+                    <div class="question">
+                        <h2>When are you available to study?</h2>
+                        <p>Select all days that work for you</p>
+                    </div>
+                    <div class="days-grid">
+                        <button type="button" 
+                                v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" 
+                                :key="day"
+                                @click="toggleDay(day)"
+                                :class="['day-btn', {active: formData.freeDays.includes(day)}]">
+                            {{ day }}
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="currentStep === 4" class="step">
+                    <div class="question">
+                        <h2>What specific topics do you need help with?</h2>
+                        <p>List the topics you're struggling with (one per line)</p>
+                    </div>
+                    <textarea v-model="formData.topics" 
+                              placeholder="e.g., Algebra equations&#10;Photosynthesis&#10;Essay writing"
+                              class="topics-textarea"></textarea>
+                </div>
+
+                <div v-if="currentStep === 5" class="step">
+                    <div class="question">
+                        <h2>What's your current grade average?</h2>
+                        <p>This helps us understand your academic performance</p>
+                    </div>
+                    <div class="grade-average-grid">
+                        <button type="button" 
+                                v-for="avg in gradeAverages" 
+                                :key="avg.value"
+                                @click="formData.currentGrade = avg.value"
+                                :class="['avg-btn', {active: formData.currentGrade === avg.value}]">
+                            {{ avg.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="currentStep === 6" class="step">
+                    <div class="question">
+                        <h2>How confident are you in your subjects?</h2>
+                        <p>Rate your overall confidence level (1-5)</p>
+                    </div>
+                    <div class="confidence-slider">
+                        <input type="range" 
+                               v-model="formData.subjectConfidence" 
+                               min="1" max="5" 
+                               class="slider">
+                        <div class="slider-labels">
+                            <span>Not confident</span>
+                            <span>{{ formData.subjectConfidence }}/5</span>
+                            <span>Very confident</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentStep === 7" class="step">
+                    <div class="question">
+                        <h2>How comfortable are you talking to older students?</h2>
+                        <p>Rate your comfort level (1-5)</p>
+                    </div>
+                    <div class="confidence-slider">
+                        <input type="range" 
+                               v-model="formData.seniorComfort" 
+                               min="1" max="5" 
+                               class="slider">
+                        <div class="slider-labels">
+                            <span>Not comfortable</span>
+                            <span>{{ formData.seniorComfort }}/5</span>
+                            <span>Very comfortable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button type="button" 
+                            @click="previousStep" 
+                            v-if="currentStep > 1"
+                            class="btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Previous
+                    </button>
+                    
+                    <button type="button" 
+                            @click="nextStep" 
+                            v-if="currentStep > 0 && currentStep < 7"
+                            :disabled="!canProceed"
+                            class="btn-primary">
+                        Next
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    
+                    <button type="submit" 
+                            v-if="currentStep === 7"
+                            :disabled="!canProceed"
+                            class="btn-primary">
+                        Submit Application
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M16.25 7.5L8.75 15L3.75 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <div v-if="submitted" class="success-message">
+                <div class="success-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="32" fill="#14b8a6"/>
+                        <path d="M20 32L28 40L44 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2>Application Submitted!</h2>
+                <p>We'll match you with a study partner soon. Check your email for updates!</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="scripts/mentee-application.js"></script>
+</body>
+</html>
