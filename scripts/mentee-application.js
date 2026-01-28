@@ -98,9 +98,9 @@ createApp({
             if (this.canProceed) {
                 console.log('Student Application Data:', this.formData); // sending to the void for now
                 this.submitted = true;
-                
+
                 setTimeout(() => {
-                    window.location.href = 'mentee-dashboard.html';
+                    window.location.href = '/mentee/dashboard/index.html';
                 }, 3000);
             }
         }

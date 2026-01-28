@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Coach Application</title>
-    <link rel="stylesheet" href="/styles/design-system.css">
     <link rel="stylesheet" href="/styles/application.css">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
 <body>
@@ -14,17 +15,8 @@
         <div class="container">
             <div class="header">
                 <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <circle cx="16" cy="16" r="16" fill="url(#gradient)" />
-                        <defs>
-                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stop-color="#9F7AEA" />
-                                <stop offset="100%" stop-color="#6B46C1" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M16 8l4 8h-8l4-8zm-4 12h8l-4 8-4-8z" fill="white" />
-                    </svg>
-                    <h1>Study Buddy</h1>
+                    <i class="ph-bold ph-graduation-cap"></i>
+                    Study Buddy
                 </div>
                 <p class="subtitle">Join as a Coach</p>
             </div>
@@ -35,20 +27,21 @@
 
             <div v-if="currentStep === 0" class="welcome-slide">
                 <div class="welcome-content">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #111;">
+                        <i class="ph-duotone ph-chalkboard-teacher"></i>
+                    </div>
                     <h2>Mentor Onboarding</h2>
                     <p>Welcome to Study Buddy! Join our coaching team and help guide younger students to academic
                         success.</p>
                     <button @click="startApplication" @keydown.enter="startApplication" class="start-btn" autofocus>
                         Start Application
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="ph-bold ph-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
             <form @submit.prevent="handleSubmit" class="form" v-if="currentStep > 0 && !submitted">
+                <!-- Step 1: Grade -->
                 <div v-if="currentStep === 1" class="step">
                     <div class="question">
                         <h2>What grade are you in?</h2>
@@ -62,6 +55,7 @@
                     </div>
                 </div>
 
+                <!-- Step 2: Subjects -->
                 <div v-if="currentStep === 2" class="step">
                     <div class="question">
                         <h2>Which subjects can you help teach?</h2>
@@ -76,6 +70,7 @@
                     </div>
                 </div>
 
+                <!-- Step 3: Num Subjects -->
                 <div v-if="currentStep === 3" class="step">
                     <div class="question">
                         <h2>How many subjects would you like to teach?</h2>
@@ -89,6 +84,7 @@
                     </div>
                 </div>
 
+                <!-- Step 4: Days -->
                 <div v-if="currentStep === 4" class="step">
                     <div class="question">
                         <h2>When are you available to teach?</h2>
@@ -104,6 +100,7 @@
                     </div>
                 </div>
 
+                <!-- Step 5: Topics Confidence -->
                 <div v-if="currentStep === 5" class="step">
                     <div class="question">
                         <h2>What topics are you most confident teaching?</h2>
@@ -114,12 +111,14 @@
                         class="topics-textarea"></textarea>
                 </div>
 
+                <!-- Step 6: Confidence Slider -->
                 <div v-if="currentStep === 6" class="step">
                     <div class="question">
                         <h2>Rate your subject confidence</h2>
                         <p>How confident are you in your teaching subjects? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
+                        <i class="ph-duotone ph-star" style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
                         <input type="range" v-model="formData.subjectConfidence" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Somewhat confident</span>
@@ -129,12 +128,15 @@
                     </div>
                 </div>
 
+                <!-- Step 7: Leadership -->
                 <div v-if="currentStep === 7" class="step">
                     <div class="question">
                         <h2>Rate your leadership skills</h2>
                         <p>How well do you guide and motivate others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
+                        <i class="ph-duotone ph-users-three"
+                            style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
                         <input type="range" v-model="formData.leadership" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
@@ -144,12 +146,14 @@
                     </div>
                 </div>
 
+                <!-- Step 8: Nurturing -->
                 <div v-if="currentStep === 8" class="step">
                     <div class="question">
                         <h2>Rate your nurturing ability</h2>
                         <p>How well do you support and encourage others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
+                        <i class="ph-duotone ph-heart" style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
                         <input type="range" v-model="formData.nurturing" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Learning</span>
@@ -159,12 +163,15 @@
                     </div>
                 </div>
 
+                <!-- Step 9: Empathy -->
                 <div v-if="currentStep === 9" class="step">
                     <div class="question">
                         <h2>Rate your empathy level</h2>
                         <p>How well do you understand and relate to others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
+                        <i class="ph-duotone ph-hand-heart"
+                            style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
                         <input type="range" v-model="formData.empathy" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
@@ -174,41 +181,32 @@
                     </div>
                 </div>
 
+                <!-- Navigation -->
                 <div class="navigation">
                     <button type="button" @click="previousStep" v-if="currentStep > 1" class="btn-secondary">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="ph-bold ph-arrow-left"></i>
                         Previous
                     </button>
+
+                    <!-- Spacer -->
+                    <div v-else></div>
 
                     <button type="button" @click="nextStep" v-if="currentStep > 0 && currentStep < 9"
                         :disabled="!canProceed" class="btn-primary">
                         Next
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="ph-bold ph-arrow-right"></i>
                     </button>
 
                     <button type="submit" v-if="currentStep === 9" :disabled="!canProceed" class="btn-primary">
                         Submit Application
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M16.25 7.5L8.75 15L3.75 10" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="ph-bold ph-check"></i>
                     </button>
                 </div>
             </form>
 
             <div v-if="submitted" class="success-message">
                 <div class="success-icon">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                        <circle cx="32" cy="32" r="32" fill="#14b8a6" />
-                        <path d="M20 32L28 40L44 24" stroke="white" stroke-width="3" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
+                    <i class="ph-fill ph-check-circle"></i>
                 </div>
                 <h2>Coach Application Submitted!</h2>
                 <p>Welcome to the Study Buddy coaching team! Our AI-powered RLM model will match you with students soon.

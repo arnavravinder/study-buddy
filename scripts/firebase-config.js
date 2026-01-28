@@ -1,20 +1,22 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Configuration using the provided keys.
 // Note: In a build environment (like Vite/Webpack), these should be accessed via process.env or import.meta.env
 // and stored in the .env file.
 const firebaseConfig = {
-    apiKey: "AIzaSyDd7wzQGIT5fhXPkgbOugDZw_7CgvU2nCE",
-    authDomain: "sb-inv.firebaseapp.com",
-    projectId: "sb-inv",
-    storageBucket: "sb-inv.firebasestorage.app",
-    messagingSenderId: "763583057791",
-    appId: "1:763583057791:web:d5a5f063302feda541144a"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-export { app, auth };
+export { app, auth, db };

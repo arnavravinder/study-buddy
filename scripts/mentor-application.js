@@ -89,9 +89,9 @@ createApp({
             if (this.canProceed) {
                 console.log('Coach Application Data:', this.formData);
                 this.submitted = true;
-                
+
                 setTimeout(() => {
-                    window.location.href = 'mentor-dashboard.html';
+                    window.location.href = '/mentor/dashboard/index.html';
                 }, 3000);
             }
         }
