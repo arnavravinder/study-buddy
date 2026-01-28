@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Buddy - Meeting</title>
+    <script src='https://8x8.vc/vpaas-magic-cookie-06b712c66eaa43319db7f1d7ab130ca5/external_api.js' async></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Manrope', sans-serif;
+            background: linear-gradient(135deg, #FFF9F5 0%, #FFFEF5 25%, #F5FFFE 50%, #F9F5FF 75%, #FFF9F5 100%);
+        }
+
+        .container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .header h1 {
+            color: #6B46C1;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        #jaas-container {
+            flex: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            background: #1a1a1a;
+            min-height: 500px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: white;
+            font-size: 18px;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #6B46C1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Study Session</h1>
+            <p id="room-info">Connecting to meeting room...</p>
+        </div>
+        <div id="jaas-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading meeting room...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomName = urlParams.get('room') || 'study-session-' + Math.random().toString(36).substring(7);
+        const userName = urlParams.get('name') || 'Student';
+        const isModerator = urlParams.get('moderator') === 'true';
+
+        document.getElementById('room-info').textContent = `Room: ${roomName}`;
+
+        async function initializeMeeting() {
+            try {
+                const response = await fetch('/api/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        roomName: roomName,
+                        userName: userName,
+                        isModerator: isModerator
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to generate token');
+                }
+
+                const jwtToken = data.token;
+
+                const domain = "8x8.vc";
+                const appId = "vpaas-magic-cookie-06b712c66eaa43319db7f1d7ab130ca5";
+
+                const options = {
+                    roomName: `${appId}/${roomName}`,
+                    parentNode: document.querySelector('#jaas-container'),
+                    width: '100%',
+                    height: '100%',
+                    jwt: jwtToken,
+                    configOverwrite: {
+                        startWithAudioMuted: false,
+                        startWithVideoMuted: false,
+                        prejoinPageEnabled: false,
+                        fileRecordingsEnabled: true,
+                        liveStreamingEnabled: false,
+                        transcribingEnabled: true
+                    },
+                    interfaceConfigOverwrite: {
+                        TOOLBAR_BUTTONS: [
+                            'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+                            'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+                            'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                            'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
+                            'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone'
+                        ],
+                        SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile', 'calendar'],
+                        SHOW_JITSI_WATERMARK: false,
+                        SHOW_WATERMARK_FOR_GUESTS: false
+                    },
+                    userInfo: {
+                        displayName: userName
+                    }
+                };
+
+                const api = new JitsiMeetExternalAPI(domain, options);
+
+                api.addEventListener('readyToClose', () => {
+                    window.location.href = '/mentee/dashboard';
+                });
+
+            } catch (error) {
+                console.error('Failed to initialize meeting:', error);
+                document.querySelector('.loading p').textContent =
+                    'Failed to connect. Make sure the backend server is running (npm start)';
+            }
+        }
+
+        // Initialize when page loads
+        window.onload = initializeMeeting;
+    </script>
+</body>
+
+</html>

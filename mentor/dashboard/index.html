@@ -1,69 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Coach Dashboard</title>
-    <link rel="stylesheet" href="styles/mentor-dashboard.css">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Raleway:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/design-system.css">
+    <link rel="stylesheet" href="/styles/mentor-dashboard.css">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@stream-io/video-client": "./node_modules/@stream-io/video-client/dist/index.es.js",
+        "webrtc-adapter": "./node_modules/webrtc-adapter/dist/adapter_no_edge.js",
+        "rxjs": "./node_modules/rxjs/dist/esm5/index.js",
+        "rxjs/operators": "./node_modules/rxjs/dist/esm5/operators/index.js",
+        "@protobuf-ts/runtime": "./node_modules/@protobuf-ts/runtime/build/es2015/index.js",
+        "@protobuf-ts/runtime-rpc": "./node_modules/@protobuf-ts/runtime-rpc/build/es2015/index.js",
+        "@protobuf-ts/twirp-transport": "./node_modules/@protobuf-ts/twirp-transport/build/es2015/index.js",
+        "axios": "./node_modules/axios/dist/esm/axios.js",
+        "ua-parser-js": "./node_modules/ua-parser-js/dist/ua-parser.min.js",
+        "sdp-transform": "./node_modules/sdp-transform/lib/index.js"
+      }
+    }
+    </script>
 </head>
+
 <body>
     <div id="app">
-        <nav class="sidebar">
+        <nav class="sidebar" v-if="activeTab !== 'chat'">
             <div class="logo">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#14b8a6"/>
-                    <path d="M16 8l4 8h-8l4-8zm-4 12h8l-4 8-4-8z" fill="white"/>
-                </svg>
+                <i class="ph-bold ph-chalkboard-teacher"></i>
                 <span>Study Buddy</span>
             </div>
-            
+
             <div class="nav-items">
                 <button @click="activeTab = 'overview'" :class="['nav-item', {active: activeTab === 'overview'}]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-house"></i>
                     Overview
                 </button>
-                
+
                 <button @click="activeTab = 'calendar'" :class="['nav-item', {active: activeTab === 'calendar'}]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 9h12v7H4V9z" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-calendar-blank"></i>
                     Calendar
                 </button>
-                
+
                 <button @click="activeTab = 'students'" :class="['nav-item', {active: activeTab === 'students'}]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-student"></i>
                     My Students
                 </button>
-                
+
                 <button @click="activeTab = 'subjects'" :class="['nav-item', {active: activeTab === 'subjects'}]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" fill="currentColor"/>
-                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3h4v1a1 1 0 102 0V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm2.5 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h3a1 1 0 110 2h-3a1 1 0 01-1-1z" clip-rule="evenodd" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-books"></i>
                     Teaching Subjects
                 </button>
-                
+
                 <button @click="activeTab = 'chat'" :class="['nav-item', {active: activeTab === 'chat'}]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-robot"></i>
                     AI Assistant
                 </button>
+
+                <a href="/tools/notes" class="nav-item">
+                    <i class="ph-bold ph-notebook"></i>
+                    Notes
+                </a>
             </div>
-            
+
             <div class="sidebar-bottom">
                 <button class="holiday-toggle" @click="toggleHolidayMode" :class="{active: holidayMode}">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 2L13.09 8.26L20 9L15 14L16.18 21L10 17.77L3.82 21L5 14L0 9L6.91 8.26L10 2Z" fill="currentColor"/>
-                    </svg>
+                    <i class="ph-bold ph-sun-horizon"></i>
                     Holiday Mode
                 </button>
-                
+
                 <div class="profile">
                     <div class="avatar">
                         <span>AC</span>
@@ -76,7 +91,8 @@
             </div>
         </nav>
 
-        <main class="main-content">
+        <main class="main-content" :class="{'ai-mode': activeTab === 'chat'}"
+            :style="activeTab === 'chat' ? 'margin-left: 0; padding: 0; width: 100vw; height: 100vh;' : ''">
             <div v-if="activeTab === 'overview'" class="overview-tab">
                 <div class="header-section">
                     <h1>Welcome back, Arjun! 🎯</h1>
@@ -86,45 +102,37 @@
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" fill="#14b8a6"/>
-                            </svg>
+                            <i class="ph-bold ph-users-three"></i>
                         </div>
                         <div class="stat-content">
                             <h3>8</h3>
                             <p>Active Students</p>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="ph-bold ph-books"></i>
                         </div>
                         <div class="stat-content">
                             <h3>3</h3>
                             <p>Teaching Subjects</p>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="ph-bold ph-check-circle"></i>
                         </div>
                         <div class="stat-content">
                             <h3>24</h3>
                             <p>Sessions This Week</p>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" fill="#14b8a6"/>
-                            </svg>
+                            <i class="ph-bold ph-star"></i>
                         </div>
                         <div class="stat-content">
                             <h3>4.9</h3>
@@ -158,9 +166,7 @@
                         <button class="btn-secondary">Reschedule</button>
                         <button class="btn-outline">View Notes</button>
                         <button class="btn-primary" @click="startMeeting">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="ph-bold ph-video-camera"></i>
                             Start Meeting
                         </button>
                     </div>
@@ -200,25 +206,23 @@
                     <h1>Teaching Schedule</h1>
                     <div class="calendar-controls">
                         <button class="calendar-nav" @click="changeMonth(-1)">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="ph-bold ph-caret-left"></i>
                         </button>
                         <span class="current-month">{{ currentMonth }}</span>
                         <button class="calendar-nav" @click="changeMonth(1)">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="ph-bold ph-caret-right"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="calendar-view">
                     <div class="calendar-grid">
-                        <div class="day-header" v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day">
+                        <div class="day-header" v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
+                            :key="day">
                             {{ day }}
                         </div>
-                        <div v-for="day in calendarDays" :key="day.date" :class="['calendar-day', {today: day.isToday, 'has-session': day.hasSession}]">
+                        <div v-for="day in calendarDays" :key="day.date"
+                            :class="['calendar-day', {today: day.isToday, 'has-session': day.hasSession}]">
                             <span class="day-number">{{ day.day }}</span>
                             <div v-if="day.hasSession" class="session-indicators">
                                 <div class="session-dot" v-for="n in Math.min(day.sessionCount, 3)" :key="n"></div>
@@ -226,7 +230,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="schedule-section">
                     <div class="today-schedule">
                         <h2>Today's Schedule</h2>
@@ -241,11 +245,12 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="availability">
                         <h2>My Availability</h2>
                         <div class="availability-grid">
-                            <div v-for="day in teachingDays" :key="day.name" :class="['day-card', {available: day.available}]">
+                            <div v-for="day in teachingDays" :key="day.name"
+                                :class="['day-card', {available: day.available}]">
                                 <div class="day-name">{{ day.name }}</div>
                                 <div class="day-status">{{ day.available ? 'Available' : 'Unavailable' }}</div>
                                 <div v-if="day.available" class="day-hours">{{ day.hours }}</div>
@@ -267,7 +272,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="students-grid">
                     <div v-for="student in filteredStudents" :key="student.id" class="student-card">
                         <div class="student-header">
@@ -279,7 +284,7 @@
                                 <p>{{ student.grade }} • {{ student.subject }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="student-stats">
                             <div class="stat-group">
                                 <div class="stat-item">
@@ -296,13 +301,13 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="progress-section">
                             <div class="progress-bar">
                                 <div class="progress-fill" :style="{width: student.progress + '%'}"></div>
                             </div>
                         </div>
-                        
+
                         <div class="student-details">
                             <div class="detail-item">
                                 <strong>Struggles with:</strong> {{ student.struggles }}
@@ -311,7 +316,7 @@
                                 <strong>Next session:</strong> {{ student.nextSession }}
                             </div>
                         </div>
-                        
+
                         <div class="student-actions">
                             <button class="btn-outline">View Notes</button>
                             <button class="btn-secondary">Message</button>
@@ -323,18 +328,16 @@
 
             <div v-if="activeTab === 'subjects'" class="subjects-tab">
                 <h1>My Teaching Subjects</h1>
-                
+
                 <div class="subjects-grid">
                     <div v-for="subject in teachingSubjects" :key="subject.name" class="subject-card">
                         <div class="subject-header">
-                            <div :class="['subject-icon', subject.name.toLowerCase()]">
-                                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                                    <path d="M16 4l4 8h8l-6 6 2 8-8-4-8 4 2-8-6-6h8l4-8z" fill="currentColor"/>
-                                </svg>
+                            <div class="subject-icon">
+                                <i :class="getSubjectIcon(subject.name)"></i>
                             </div>
                             <h3>{{ subject.name }}</h3>
                         </div>
-                        
+
                         <div class="subject-metrics">
                             <div class="metric">
                                 <span class="metric-label">Students</span>
@@ -349,24 +352,25 @@
                                 <span class="metric-value">{{ subject.rating }}/5</span>
                             </div>
                         </div>
-                        
+
                         <div class="confidence-section">
                             <div class="confidence-label">
                                 <span>My Confidence</span>
                                 <span>{{ subject.confidence }}/5</span>
                             </div>
                             <div class="confidence-bar">
-                                <div class="confidence-fill" :style="{width: (subject.confidence / 5) * 100 + '%'}"></div>
+                                <div class="confidence-fill" :style="{width: (subject.confidence / 5) * 100 + '%'}">
+                                </div>
                             </div>
                         </div>
-                        
+
                         <div class="topics-section">
                             <h4>Topics I Teach</h4>
                             <div class="topics-list">
                                 <span v-for="topic in subject.topics" :key="topic" class="topic-tag">{{ topic }}</span>
                             </div>
                         </div>
-                        
+
                         <div class="subject-actions">
                             <button class="btn-outline">View Students</button>
                             <button class="btn-primary">Manage Topics</button>
@@ -375,64 +379,157 @@
                 </div>
             </div>
 
-            <div v-if="activeTab === 'chat'" class="chat-tab">
-                <div class="chat-header">
-                    <h1>Teaching Assistant AI</h1>
-                    <p>Get help with lesson planning and student support</p>
-                </div>
-                
-                <div class="chat-container">
-                    <div class="chat-messages" ref="chatMessages">
-                        <div v-for="message in chatMessages" :key="message.id" :class="['message', message.sender]">
-                            <div v-if="message.sender === 'ai'" class="message-avatar">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9.5 2A7.5 7.5 0 002 9.5c0 5.5 3.5 7.9 6.5 8.5h.5a.5.5 0 00.5-.5v-3c0-.3.2-.5.5-.5h6c.3 0 .5-.2.5-.5v-4A7.5 7.5 0 009.5 2z" fill="#14b8a6"/>
-                                </svg>
-                            </div>
-                            <div class="message-content">{{ message.content }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="chat-input">
-                        <input v-model="chatInput" @keyup.enter="sendMessage" placeholder="Ask about teaching strategies, lesson plans, student support..." class="chat-field">
-                        <button @click="sendMessage" class="send-btn">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M2 10l16-8-8 8-8 8z" fill="currentColor"/>
-                            </svg>
+            <div v-if="activeTab === 'chat'" class="ai-assistant-page"
+                style="height: 100vh; display: flex; background: var(--bg-card);">
+                <!-- History Sidebar -->
+                <div class="ai-history"
+                    style="width: 260px; background: var(--bg-body); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                    <div
+                        style="padding: 1.5rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button @click="activeTab = 'overview'"
+                            style="align-self: flex-start; background: transparent; border: none; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            <i class="ph-bold ph-arrow-left"></i> Back to Dashboard
+                        </button>
+                        <button @click="startNewChat"
+                            style="width: 100%; border: 1px dashed var(--border-color); background: transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;">
+                            <i class="ph-bold ph-plus"></i> New Chat
                         </button>
                     </div>
+                    <div class="history-list" style="flex: 1; overflow-y: auto; padding: 1rem;">
+                        <div
+                            style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Recent</div>
+                        <div v-for="chat in aiHistory" :key="chat.id" class="history-item"
+                            style="padding: 0.75rem; border-radius: 8px; cursor: pointer; color: var(--text-primary); margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+                            <i class="ph-regular ph-chat-circle"></i>
+                            <span style="font-size: 0.9rem;">{{ chat.title }}</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="quick-questions">
-                    <h3>Teaching Assistance</h3>
-                    <div class="question-chips">
-                        <button @click="askQuickQuestion" class="question-chip">How to explain complex concepts simply?</button>
-                        <button @click="askQuickQuestion" class="question-chip">Student motivation strategies</button>
-                        <button @click="askQuickQuestion" class="question-chip">Lesson plan for organic chemistry</button>
-                        <button @click="askQuickQuestion" class="question-chip">Dealing with struggling students</button>
+
+                <!-- Chat Area -->
+                <div class="ai-chat-main" style="flex: 1; display: flex; flex-direction: column; position: relative;">
+                    <!-- Empty State / Welcome -->
+                    <div v-if="aiMessages.length === 0"
+                        style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; color: var(--text-primary);">
+                        <div
+                            style="width: 64px; height: 64px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4);">
+                            <i class="ph-fill ph-chalkboard-teacher"></i>
+                        </div>
+                        <h2 style="font-size: 1.75rem; font-weight: 700;">Teaching Assistant AI</h2>
+                        <p style="color: var(--text-secondary); margin-top: -1rem;">Powered by OpenAI</p>
+
+                        <div class="suggestions"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; max-width: 600px; padding: 0 2rem;">
+                            <button @click="sendSuggestion('Create a lesson plan for Thermodynamics')"
+                                class="suggestion-chip"
+                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Lesson Plan</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Structure a 45 min class
+                                </div>
+                            </button>
+                            <button @click="sendSuggestion('Generate 5 quiz questions for Algebra')"
+                                class="suggestion-chip"
+                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Quiz Generator</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Create practice problems
+                                </div>
+                            </button>
+                            <button @click="sendSuggestion('How to explain gravity to a 10 year old?')"
+                                class="suggestion-chip"
+                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Simplification Strategy</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedagogical advice</div>
+                            </button>
+                            <button @click="sendSuggestion('Email template for parent update')" class="suggestion-chip"
+                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Communication</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Draft professional emails
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div v-else class="ai-messages-scroll" ref="aiChatScroll"
+                        style="flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div v-for="msg in aiMessages" :key="msg.id"
+                            :style="{alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '70%'}">
+                            <div :style="{
+                                    padding: '1rem 1.5rem', 
+                                    borderRadius: msg.sender === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                    background: msg.sender === 'user' ? 'var(--primary-color)' : 'var(--bg-body)',
+                                    color: msg.sender === 'user' ? 'white' : 'var(--text-primary)',
+                                    boxShadow: 'var(--shadow-card)',
+                                    lineHeight: '1.6'
+                                }">
+                                <div v-if="msg.sender === 'ai'"
+                                    style="display: flex; gap: 0.75rem; margin-bottom: 0.5rem; align-items: center; font-size: 0.85rem; font-weight: 700; opacity: 0.7;">
+                                    <i class="ph-fill ph-chalkboard-teacher"></i> Assistant
+                                </div>
+                                <div v-html="msg.content"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div style="padding: 1.5rem 2rem; background: var(--bg-card);">
+                        <div style="position: relative; max-width: 800px; margin: 0 auto;">
+                            <textarea v-model="aiInput" @keyup.enter.prevent="sendAiMessage"
+                                placeholder="Ask for teaching advice, resources, or lesson plans..."
+                                style="width: 100%; padding: 1rem 3rem 1rem 1.5rem; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-body); color: var(--text-primary); resize: none; outline: none; height: 60px; font-family: inherit; box-shadow: var(--shadow-card);"></textarea>
+                            <button @click="sendAiMessage"
+                                style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                <i class="ph-bold ph-paper-plane-right"></i>
+                            </button>
+                        </div>
+                        <div
+                            style="text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.75rem;">
+                            AI assistance for educators. Verify content before use.
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
-        
-        <div v-if="showMeetingModal" class="meeting-modal">
-            <div class="modal-content">
-                <h2>Chemistry Session</h2>
-                <div class="meeting-info">
-                    <p>Teaching Jamie Student</p>
-                    <p>Organic Chemistry Basics</p>
+
+        <div v-if="showMeetingModal" class="meeting-modal" @click.self="leaveMeeting">
+            <div class="modal-content modal-video">
+                <button @click="leaveMeeting" class="modal-close-btn">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+                <div class="meeting-header">
+                    <h2>Chemistry with Anirudh Kumar</h2>
+                    <div class="meeting-status">
+                        <span class="status-indicator"></span>
+                        <span>{{ callStatus }}</span>
+                    </div>
                 </div>
-                <div class="meeting-frame">
-                    <iframe src="https://meet.jit.si/StudyBuddy-Chemistry-Coach-12345" width="100%" height="400" frameborder="0"></iframe> <!-- jitsi works sometimes -->
+
+                <div id="video-container" class="video-container">
+                    <div id="remote-video" class="remote-video"></div>
+                    <div id="local-video" class="local-video"></div>
                 </div>
-                <div class="modal-actions">
-                    <button @click="showMeetingModal = false" class="btn-secondary">End Session</button>
+
+                <div class="video-controls">
+                    <button @click="toggleAudio" :class="['control-btn', {active: isAudioEnabled}]">
+                        <i :class="isAudioEnabled ? 'ph-bold ph-microphone' : 'ph-bold ph-microphone-slash'"></i>
+                    </button>
+                    <button @click="toggleVideo" :class="['control-btn', {active: isVideoEnabled}]">
+                        <i :class="isVideoEnabled ? 'ph-bold ph-video-camera' : 'ph-bold ph-video-camera-slash'"></i>
+                    </button>
+                    <button @click="toggleScreenShare" :class="['control-btn', {active: isScreenSharing}]">
+                        <i class="ph-bold ph-monitor"></i>
+                    </button>
+                    <button @click="leaveMeeting" class="control-btn danger">
+                        <i class="ph-bold ph-phone-disconnect"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="scripts/mentor-dashboard.js"></script>
+    <script src="/scripts/mentor-dashboard.js" type="module"></script>
 </body>
+
 </html>

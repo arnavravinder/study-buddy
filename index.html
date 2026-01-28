@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Buddy - Login</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <!-- Fonts -->
+    <link href="https://api.fontshare.com/v2/css?f[]=boska@700,900&f[]=switzer@400,500,600,700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <link rel="stylesheet" href="/styles/login.css">
+</head>
+
+<body>
+
+    <!-- Animated Blob Background -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="login-container">
+        <div class="header">
+            <div class="logo-large">
+                <i class="ph-bold ph-graduation-cap logo-icon"></i>
+                Study Buddy
+            </div>
+            <p class="tagline">Your all-in-one platform for academic success</p>
+        </div>
+
+        <button id="google-login-btn" class="login-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20"
+                height="20">
+            Continue with Google
+        </button>
+
+        <div class="divider">or</div>
+
+        <button class="login-btn" style="color: #6b7280; justify-content: center; gap: 8px;">
+            <i class="ph-bold ph-envelope-simple" style="font-size: 1.2rem;"></i>
+            Continue with Email
+        </button>
+
+        <p class="footer-text">
+            By continuing, you agree to our
+            <a href="#">Terms of Service</a> and
+            <a href="#">Privacy Policy</a>.
+        </p>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { signInWithGoogle } from '/scripts/auth.js';
+
+        const googleBtn = document.getElementById('google-login-btn');
+        googleBtn.addEventListener('click', async () => {
+            googleBtn.classList.add('loading');
+            googleBtn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="font-size: 1.2rem;"></i> Connecting...';
+            try {
+                await signInWithGoogle();
+            } catch (error) {
+                console.error(error);
+                // Reset button state on error (success redirects)
+                googleBtn.classList.remove('loading');
+                googleBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20" height="20"> Continue with Google';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/mentee/dashboard",
+      "destination": "/mentee/dashboard/index.html"
+    },
+    {
+      "source": "/mentor/dashboard",
+      "destination": "/mentor/dashboard/index.html"
+    },
+    {
+      "source": "/apply/mentee",
+      "destination": "/apply/mentee/index.html"
+    },
+    {
+      "source": "/apply/mentor",
+      "destination": "/apply/mentor/index.html"
+    },
+    {
+      "source": "/tools/meeting",
+      "destination": "/tools/meeting/index.html"
+    },
+    {
+      "source": "/tools/notes",
+      "destination": "/tools/notes/index.html"
+    },
+    {
+      "source": "/tools/whiteboard",
+      "destination": "/tools/whiteboard/index.html"
+    }
+  ]
+}

@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Coach Application</title>
-    <link rel="stylesheet" href="styles/mentor-application.css">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/design-system.css">
+    <link rel="stylesheet" href="/styles/application.css">
 </head>
+
 <body>
     <div id="app">
         <div class="container">
             <div class="header">
                 <div class="logo">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <circle cx="16" cy="16" r="16" fill="#14b8a6"/>
-                        <path d="M16 8l4 8h-8l4-8zm-4 12h8l-4 8-4-8z" fill="white"/>
+                        <circle cx="16" cy="16" r="16" fill="url(#gradient)" />
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#9F7AEA" />
+                                <stop offset="100%" stop-color="#6B46C1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M16 8l4 8h-8l4-8zm-4 12h8l-4 8-4-8z" fill="white" />
                     </svg>
                     <h1>Study Buddy</h1>
                 </div>
@@ -28,11 +36,13 @@
             <div v-if="currentStep === 0" class="welcome-slide">
                 <div class="welcome-content">
                     <h2>Mentor Onboarding</h2>
-                    <p>Welcome to Study Buddy! Join our coaching team and help guide younger students to academic success.</p>
+                    <p>Welcome to Study Buddy! Join our coaching team and help guide younger students to academic
+                        success.</p>
                     <button @click="startApplication" @keydown.enter="startApplication" class="start-btn" autofocus>
                         Start Application
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </button>
                 </div>
@@ -45,11 +55,8 @@
                         <p>Coaches help students in younger grades</p>
                     </div>
                     <div class="grade-grid">
-                        <button type="button" 
-                                v-for="grade in [7,8,9,10,11,12]" 
-                                :key="grade"
-                                @click="formData.grade = grade"
-                                :class="['grade-btn', {active: formData.grade === grade}]">
+                        <button type="button" v-for="grade in [7,8,9,10,11,12]" :key="grade"
+                            @click="formData.grade = grade" :class="['grade-btn', {active: formData.grade === grade}]">
                             Grade {{ grade }}
                         </button>
                     </div>
@@ -61,11 +68,9 @@
                         <p>Select all subjects you're confident in</p>
                     </div>
                     <div class="subjects-grid">
-                        <button type="button" 
-                                v-for="subject in availableSubjects" 
-                                :key="subject"
-                                @click="toggleSubject(subject)"
-                                :class="['subject-btn', {active: formData.subjects.includes(subject)}]">
+                        <button type="button" v-for="subject in availableSubjects" :key="subject"
+                            @click="toggleSubject(subject)"
+                            :class="['subject-btn', {active: formData.subjects.includes(subject)}]">
                             {{ subject }}
                         </button>
                     </div>
@@ -77,11 +82,8 @@
                         <p>We recommend starting with 1-3 subjects</p>
                     </div>
                     <div class="number-grid">
-                        <button type="button" 
-                                v-for="num in [1,2,3]" 
-                                :key="num"
-                                @click="formData.numSubjects = num"
-                                :class="['number-btn', {active: formData.numSubjects === num}]">
+                        <button type="button" v-for="num in [1,2,3]" :key="num" @click="formData.numSubjects = num"
+                            :class="['number-btn', {active: formData.numSubjects === num}]">
                             {{ num }} {{ num === 1 ? 'Subject' : 'Subjects' }}
                         </button>
                     </div>
@@ -93,11 +95,10 @@
                         <p>Select all days that work for you</p>
                     </div>
                     <div class="days-grid">
-                        <button type="button" 
-                                v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" 
-                                :key="day"
-                                @click="toggleDay(day)"
-                                :class="['day-btn', {active: formData.freeDays.includes(day)}]">
+                        <button type="button"
+                            v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']"
+                            :key="day" @click="toggleDay(day)"
+                            :class="['day-btn', {active: formData.freeDays.includes(day)}]">
                             {{ day }}
                         </button>
                     </div>
@@ -108,9 +109,9 @@
                         <h2>What topics are you most confident teaching?</h2>
                         <p>List specific topics you excel at (one per line)</p>
                     </div>
-                    <textarea v-model="formData.topicsConfidence" 
-                              placeholder="e.g., Quadratic equations&#10;Cell division&#10;Essay structure and grammar"
-                              class="topics-textarea"></textarea>
+                    <textarea v-model="formData.topicsConfidence"
+                        placeholder="e.g., Quadratic equations&#10;Cell division&#10;Essay structure and grammar"
+                        class="topics-textarea"></textarea>
                 </div>
 
                 <div v-if="currentStep === 6" class="step">
@@ -119,10 +120,7 @@
                         <p>How confident are you in your teaching subjects? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <input type="range" 
-                               v-model="formData.subjectConfidence" 
-                               min="1" max="5" 
-                               class="slider">
+                        <input type="range" v-model="formData.subjectConfidence" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Somewhat confident</span>
                             <span>{{ formData.subjectConfidence }}/5</span>
@@ -137,10 +135,7 @@
                         <p>How well do you guide and motivate others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <input type="range" 
-                               v-model="formData.leadership" 
-                               min="1" max="5" 
-                               class="slider">
+                        <input type="range" v-model="formData.leadership" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
                             <span>{{ formData.leadership }}/5</span>
@@ -155,10 +150,7 @@
                         <p>How well do you support and encourage others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <input type="range" 
-                               v-model="formData.nurturing" 
-                               min="1" max="5" 
-                               class="slider">
+                        <input type="range" v-model="formData.nurturing" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Learning</span>
                             <span>{{ formData.nurturing }}/5</span>
@@ -173,10 +165,7 @@
                         <p>How well do you understand and relate to others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <input type="range" 
-                               v-model="formData.empathy" 
-                               min="1" max="5" 
-                               class="slider">
+                        <input type="range" v-model="formData.empathy" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
                             <span>{{ formData.empathy }}/5</span>
@@ -186,34 +175,28 @@
                 </div>
 
                 <div class="navigation">
-                    <button type="button" 
-                            @click="previousStep" 
-                            v-if="currentStep > 1"
-                            class="btn-secondary">
+                    <button type="button" @click="previousStep" v-if="currentStep > 1" class="btn-secondary">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         Previous
                     </button>
-                    
-                    <button type="button" 
-                            @click="nextStep" 
-                            v-if="currentStep > 0 && currentStep < 9"
-                            :disabled="!canProceed"
-                            class="btn-primary">
+
+                    <button type="button" @click="nextStep" v-if="currentStep > 0 && currentStep < 9"
+                        :disabled="!canProceed" class="btn-primary">
                         Next
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </button>
-                    
-                    <button type="submit" 
-                            v-if="currentStep === 9"
-                            :disabled="!canProceed"
-                            class="btn-primary">
+
+                    <button type="submit" v-if="currentStep === 9" :disabled="!canProceed" class="btn-primary">
                         Submit Application
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M16.25 7.5L8.75 15L3.75 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16.25 7.5L8.75 15L3.75 10" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </button>
                 </div>
@@ -222,17 +205,20 @@
             <div v-if="submitted" class="success-message">
                 <div class="success-icon">
                     <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                        <circle cx="32" cy="32" r="32" fill="#14b8a6"/>
-                        <path d="M20 32L28 40L44 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="32" cy="32" r="32" fill="#14b8a6" />
+                        <path d="M20 32L28 40L44 24" stroke="white" stroke-width="3" stroke-linecap="round"
+                            stroke-linejoin="round" />
                     </svg>
                 </div>
                 <h2>Coach Application Submitted!</h2>
-                <p>Welcome to the Study Buddy coaching team! We'll match you with students soon.</p>
+                <p>Welcome to the Study Buddy coaching team! Our AI-powered RLM model will match you with students soon.
+                </p>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="scripts/mentor-application.js"></script>
+    <script src="/scripts/mentor-application.js"></script>
 </body>
+
 </html>
