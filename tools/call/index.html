@@ -7,7 +7,7 @@
     <title>Video Call - Study Buddy</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.0.3"></script>
     <style>
         * {
             margin: 0;
@@ -648,7 +648,7 @@
         async function stopRecordingAndTranscribe() {
             if (!callRecorder || callRecorder.state === 'inactive') return;
             const duration = callStartTime ? Math.round((Date.now() - callStartTime) / 1000) : 0;
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 callRecorder.onstop = async () => {
                     console.log('Recording stopped, transcribing...');
                     const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
@@ -683,6 +683,30 @@
                             transcriptText = output;
                         }
                         if (transcriptText && window._fbRtdb) {
+                            // Generate Summary
+                            let summary = '';
+                            try {
+                                const summaryRes = await fetch('/api/ai', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        messages: [
+                                            {
+                                                role: 'system',
+                                                content: 'You are a helpful study assistant. Summarize the following tutoring session transcript into 3-5 concise bullet points. Do not use meta-language like "agentic" or "action items", just state what happened.'
+                                            },
+                                            { role: 'user', content: transcriptText }
+                                        ]
+                                    })
+                                });
+                                if (summaryRes.ok) {
+                                    const summaryData = await summaryRes.json();
+                                    summary = summaryData.choices?.[0]?.message?.content || '';
+                                }
+                            } catch (err) {
+                                console.error("Summary generation failed", err);
+                            }
+
                             const safeChannel = channelName.replace(/[.#$/\[\]]/g, '_');
                             const sessionId = safeChannel + '_' + Date.now();
                             await window._fbSet(window._fbRef(window._fbRtdb, `callTranscripts/${sessionId}`), {
@@ -691,15 +715,17 @@
                                 menteeName: menteeName,
                                 duration: duration,
                                 transcript: transcriptText,
+                                summary: summary,
                                 chunks: chunks,
                                 createdAt: Date.now()
                             });
                             console.log('Transcript saved to Firebase');
                         }
+                        resolve();
                     } catch (e) {
                         console.error('Transcription/save error:', e);
+                        reject(e);
                     }
-                    resolve();
                 };
                 callRecorder.stop();
             });
@@ -1016,7 +1042,18 @@
             }
         }
         async function endCall() {
-            await stopRecordingAndTranscribe();
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;color:white;font-family:inherit;';
+            overlay.innerHTML = '<div style="font-size:1.5rem;font-weight:600;margin-bottom:1rem;">Saving transcript...</div><div style="width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;"></div>';
+            document.body.appendChild(overlay);
+            try {
+                await stopRecordingAndTranscribe();
+                overlay.innerHTML = '<div style="font-size:1.5rem;font-weight:600;">✓ Saved</div>';
+            } catch (e) {
+                console.error('End call error:', e);
+                overlay.innerHTML = '<div style="font-size:1.2rem;color:#f87171;">Transcription failed: ' + (e.message || e) + '</div><div style="margin-top:1rem;font-size:0.9rem;color:#aaa;">Closing in 3 seconds...</div>';
+                await new Promise(r => setTimeout(r, 3000));
+            }
             if (recordingMixerCtx) {
                 recordingMixerCtx.close().catch(() => { });
                 recordingMixerCtx = null;
@@ -1026,10 +1063,9 @@
             if (localScreenTrack) localScreenTrack.close();
             if (screenClient) { try { await screenClient.leave(); } catch (_) { } screenClient = null; }
             if (client) await client.leave();
+            await new Promise(r => setTimeout(r, 800));
             window.close();
-            setTimeout(() => {
-                window.location.href = '/mentor/dashboard';
-            }, 100);
+            setTimeout(() => { window.location.href = '/mentor/dashboard'; }, 200);
         }
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');

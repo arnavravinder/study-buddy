@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -85,7 +85,8 @@
                 <div class="user-mini-profile">
                     <div class="avatar-circle">{{ userInitials }}</div>
                     <div class="info" style="display: flex; flex-direction: column;">
-                        <span style="font-weight: 700; font-size: 0.9rem;">{{ currentUser?.displayName || currentUser?.name || 'Student' }}</span>
+                        <span style="font-weight: 700; font-size: 0.9rem;">{{ currentUser?.displayName ||
+                            currentUser?.name || 'Student' }}</span>
                         <span style="font-size: 0.8rem; color: var(--text-secondary);">Student</span>
                     </div>
                 </div>
@@ -187,7 +188,8 @@
                                 {{ getMentorInitials(mentor) }}
                             </div>
                             <h3>{{ mentor.displayName || mentor.name }}</h3>
-                            <p style="margin-bottom: 1rem;">{{ mentor.subjects?.join(', ') || mentor.subject || 'General' }}</p>
+                            <p style="margin-bottom: 1rem;">{{ mentor.subjects?.join(', ') || mentor.subject ||
+                                'General' }}</p>
                             <div style="display: flex; gap: 0.5rem; width: 100%;">
                                 <button class="btn-outline" @click="viewMentorAvailability(mentor)"
                                     style="flex: 1;">Schedule</button>
@@ -216,7 +218,8 @@
                         <div v-for="booking in pendingBookings" :key="booking.id" class="booking-card">
                             <div class="booking-info">
                                 <h4>{{ booking.subject }}</h4>
-                                <p>{{ booking.mentorName }} • {{ formatSessionDate(booking.date) }} at {{ booking.time }}</p>
+                                <p>{{ booking.mentorName }} • {{ formatSessionDate(booking.date) }} at {{ booking.time
+                                    }}</p>
                             </div>
                             <span
                                 style="background: #fef3c7; color: #92400e; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">
@@ -232,7 +235,8 @@
                                     <i class="ph ph-calendar"></i>
                                 </div>
                                 <div>
-                                    <div class="item-primary-text">{{ formatSessionDate(session.date) }} • {{ formatSessionTime(session.startTime) }}</div>
+                                    <div class="item-primary-text">{{ formatSessionDate(session.date) }} • {{
+                                        formatSessionTime(session.startTime) }}</div>
                                     <div class="item-secondary-text">{{ session.subject }}</div>
                                 </div>
                             </div>
@@ -516,7 +520,8 @@
                                     <div style="flex: 1;">
                                         <div style="display: flex; justify-content: space-between;">
                                             <span style="font-weight: 600;">{{ chat.mentorName }}</span>
-                                            <span style="font-size: 0.75rem; color: #999;">{{ formatMessageTime(chat.lastMessageTime) }}</span>
+                                            <span style="font-size: 0.75rem; color: #999;">{{
+                                                formatMessageTime(chat.lastMessageTime) }}</span>
                                         </div>
                                         <div
                                             style="font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -537,7 +542,8 @@
                                 style="padding: 1rem 2rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 1rem;">
                                     <div class="avatar-circle" style="background: #222; color: white;">
-                                        {{ activeChat.mentorName ? activeChat.mentorName.substring(0, 2).toUpperCase() : 'MT' }}
+                                        {{ activeChat.mentorName ? activeChat.mentorName.substring(0, 2).toUpperCase() :
+                                        'MT' }}
                                     </div>
                                     <div>
                                         <div style="font-weight: 700;">{{ activeChat.mentorName }}</div>
@@ -636,10 +642,30 @@
                                 <i :class="ct.expanded ? 'ph ph-caret-up' : 'ph ph-caret-down'"
                                     style="color: #999;"></i>
                             </div>
-                            <div v-if="ct.expanded"
-                                style="background: #f9fafb; border-radius: 12px; padding: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: #444; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"
-                                @click.stop>
-                                {{ ct.transcript || 'No transcript available' }}
+                            <div v-if="ct.expanded" @click.stop
+                                style="background: #f9fafb; border-radius: 12px; padding: 1.5rem;">
+                                <div v-if="ct.summary">
+                                    <div
+                                        style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; color: #333;">
+                                        Session Summary</div>
+                                    <div class="markdown-body" v-html="renderMarkdown(ct.summary)"
+                                        style="font-size: 0.9rem; color: #555; line-height: 1.6; margin-bottom: 1.5rem;">
+                                    </div>
+                                </div>
+                                <div v-else-if="ct.generatingSummary"
+                                    style="color: #999; font-size: 0.9rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+                                    Generating summary...
+                                </div>
+                                <div v-else style="margin-bottom: 1.5rem;">
+                                    {{ generateSummary(ct) }}
+                                    <span style="color: #999; font-size: 0.9rem;">Loading summary...</span>
+                                </div>
+
+                                <button class="btn" @click="analyzeSession(ct)" style="width: 100%;">
+                                    <i class="ph ph-chat-circle-text" style="margin-right: 0.5rem;"></i>
+                                    Chat about meeting
+                                </button>
                             </div>
                         </div>
                         <div v-if="callTranscripts.length === 0"
@@ -865,7 +891,10 @@
                     <label>Select Mentor</label>
                     <div class="custom-select" :class="{open: dropdowns.mentor}" @click.stop="toggleDropdown('mentor')">
                         <div class="custom-select-trigger">
-                            <span :class="{placeholder: !bookingData.mentorId}">{{ bookingData.mentorId ? (assignedMentors.find(m => m.id === bookingData.mentorId)?.displayName || assignedMentors.find(m => m.id === bookingData.mentorId)?.name || 'Choose a mentor') : 'Choose a mentor' }}</span>
+                            <span :class="{placeholder: !bookingData.mentorId}">{{ bookingData.mentorId ?
+                                (assignedMentors.find(m => m.id === bookingData.mentorId)?.displayName ||
+                                assignedMentors.find(m => m.id === bookingData.mentorId)?.name || 'Choose a mentor') :
+                                'Choose a mentor' }}</span>
                             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
                                 <path d="M6 9l6 6 6-6" />
                             </svg>
@@ -984,7 +1013,8 @@
                 <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">{{ confirmMessage }}</p>
                 <div style="display: flex; gap: 0.75rem;">
                     <button class="btn-outline" @click="showConfirmModal = false" style="flex: 1;">Cancel</button>
-                    <button class="btn" @click="confirmModalAction" style="flex: 1; background: #ef4444;">{{ confirmBtnText || 'Delete' }}</button>
+                    <button class="btn" @click="confirmModalAction" style="flex: 1; background: #ef4444;">{{
+                        confirmBtnText || 'Delete' }}</button>
                 </div>
             </div>
         </div>

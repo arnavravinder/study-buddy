@@ -319,13 +319,52 @@ createApp({
             const map = { 30: '30 minutes', 60: '60 minutes', 90: '90 minutes' };
             return map[val] || '60 minutes';
         },
-        async logout() {
+        async generateSummary(ct) {
+            if (ct.summary || ct.generatingSummary) return;
+            ct.generatingSummary = true;
             try {
-                await signOut(auth);
-                window.location.href = '/';
-            } catch (error) {
-                console.error('Error signing out:', error);
+                const res = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: `You are a helpful study assistant for ${this.currentUser?.displayName || 'the user'}. Summarize the following tutoring session transcript into 3-5 concise bullet points. Do not list your tools or upsell capabilities.` },
+                            { role: 'user', content: ct.transcript }
+                        ]
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    ct.summary = data.choices?.[0]?.message?.content || '';
+                }
+            } catch (e) {
+                console.error("Summary gen failed", e);
             }
+            ct.generatingSummary = false;
+        },
+        analyzeSession(ct) {
+            // Switch to AI tab
+            this.activeTab = 'ai';
+            this.aiSidebarTab = 'chats';
+
+            // Start new chat
+            this.startNewChat();
+
+            // Seed with transcript context (hidden system message)
+            this.messages.push({
+                role: 'system',
+                content: `You are analyzing a transcript of a tutoring session. 
+TRANSCRIPT:
+${ct.transcript}
+
+The user will ask questions about this meeting. Answer helpfully and concisely.`
+            });
+
+            // Proactive AI greeting
+            this.messages.push({
+                role: 'assistant',
+                content: "I've reviewed the transcript for this session. What would you like to know about the meeting?"
+            });
         },
         toggleDropdown(name) {
             const isOpen = this.dropdowns[name];
@@ -1243,28 +1282,36 @@ createApp({
                     });
                     const sessionContext = this.todaySessions.map(s => `- ${s.time}: ${s.student} (${s.subject})`).join('\n');
                     const studentNames = this.students.map(s => s.name || s.displayName).join(', ');
-                    apiMessages.unshift({
-                        role: 'system',
-                        content: `You are an intelligent educational assistant for a mentor/tutor platform in India.
+                    const systemPrompt = `You are an intelligent educational assistant for ${this.currentUser?.displayName || 'the user'} on a mentor/tutor platform.
 **Context (Today's Schedule):**
 ${sessionContext || 'No sessions scheduled today.'}
 **Your Students:** ${studentNames || 'No students assigned yet.'}
 
-**Your Agentic Capabilities (mention these when relevant):**
-- Schedule sessions with students
-- Message students directly
-- Assign quizzes to students
-- View schedule and student information
+**Guidelines:**
+- You are assisting **${this.currentUser?.displayName || 'the user'}** directly.
+- **Do NOT** list your capabilities or tools unless explicitly asked.
+- **Do NOT** upsell your features (e.g. "I can also schedule..."). Just answer the question.
+- If the user asks for a note, schedule, or message, **just do it** (or say you are doing it) without explaining the mechanism.
+
+**Available Tools (Implicitly used):**
+- Create Note (Write content to notes)
+- Schedule Session
+- Message Student
+- Assign Quiz
+- View Information
 
 **Formatting Rules:**
-- Use **Markdown** for formatting: headers, lists, bold, code blocks, tables
-- Use **LaTeX** for math: inline with $...$ and block with $$...$$
+- Use **Markdown** for formatting.
+- Use **LaTeX** for math ($...$ inline, $$...$$ block).
 - Do NOT use emojis.
-- When mentioning currency, use INR (₹).
-**Content Guidelines:**
-- This is an EDUCATIONAL platform. Keep all content school-appropriate.
-- Be accurate, helpful, and encouraging
-- Provide detailed explanations when teaching concepts`
+- Use INR (₹) for currency.
+
+**Content:**
+- Keep content school-appropriate, accurate, and helpful.`;
+
+                    apiMessages.unshift({
+                        role: 'system',
+                        content: systemPrompt
                     });
                     const response = await fetch("/api/ai", {
                         method: "POST",
@@ -1350,6 +1397,9 @@ ${sessionContext || 'No sessions scheduled today.'}
             }
             if (/\b(solve|calculate|equation|integral|derivative|math|compute|\d+\s*[\+\-\*\/\^]\s*\d+)/i.test(prompt)) {
                 return { tool: 'Math Solver', icon: 'ph-calculator', agentic: false };
+            }
+            if (/\b(create|write|add|make|take)\b.*(note|memo)/i.test(prompt)) {
+                return { tool: 'Create Note', icon: 'ph-note-pencil', agentic: true };
             }
             return { tool: null, icon: null, agentic: false };
         },
@@ -1524,6 +1574,62 @@ ${sessionContext || 'No sessions scheduled today.'}
                     } catch (e) {
                         console.error("Quiz assignment error:", e);
                         return { success: false, message: "Sorry, I couldn't assign the quiz. Please try again." };
+                    }
+                }
+                case 'Create Note': {
+                    // Generate note content via AI
+                    try {
+                        const noteRes = await fetch('/api/ai', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                messages: [
+                                    { role: 'system', content: 'You are a note-taking assistant. Generate a structured note based on the user request. Return JSON with "title" and "content" fields. The content should be detailed and formatted in HTML.' },
+                                    { role: 'user', content: prompt }
+                                ]
+                            })
+                        });
+                        const noteData = await noteRes.json();
+                        let contentStr = noteData.choices?.[0]?.message?.content || '';
+                        let title = 'New Note';
+                        let body = contentStr;
+
+                        // Try to parse JSON from AI response
+                        try {
+                            const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                title = parsed.title || title;
+                                body = parsed.content || body;
+                            } else {
+                                // Fallback title extraction
+                                const lines = contentStr.split('\n');
+                                title = lines[0].replace(/^#+\s*/, '').substring(0, 50);
+                                body = contentStr;
+                            }
+                        } catch (e) { }
+
+                        await addDoc(collection(db, "notes"), {
+                            title: title,
+                            content: body,
+                            date: new Date(),
+                            uid: this.currentUser.uid,
+                            createdAt: serverTimestamp()
+                        });
+
+                        // Refresh notes
+                        const q = query(collection(db, "notes"), where("uid", "==", this.currentUser.uid), orderBy("createdAt", "desc"));
+                        const snap = await getDocs(q);
+                        this.notes = [];
+                        snap.forEach(doc => this.notes.push({ id: doc.id, ...doc.data() }));
+
+                        return {
+                            success: true,
+                            message: `I've created a new note titled "**${title}**" with the content you requested. You can find it in the Notes tab.`
+                        };
+                    } catch (e) {
+                        console.error("Note creation error:", e);
+                        return { success: false, message: "Sorry, I couldn't create the note." };
                     }
                 }
                 case 'View Schedule': {

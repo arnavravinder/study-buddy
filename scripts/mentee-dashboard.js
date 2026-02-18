@@ -213,6 +213,55 @@ createApp({
             const map = { '9': 'Grade 9', '10': 'Grade 10', '11': 'Grade 11', '12': 'Grade 12', 'college': 'College' };
             return map[val] || 'Select grade';
         },
+        async generateSummary(ct) {
+            if (ct.summary || ct.generatingSummary) return;
+            ct.generatingSummary = true;
+            try {
+                const res = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: 'You are a helpful study assistant. Summarize the following tutoring session transcript into 3-5 concise bullet points. Do not mention "agentic" or "technical details".' },
+                            { role: 'user', content: ct.transcript }
+                        ]
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    ct.summary = data.choices?.[0]?.message?.content || '';
+                }
+            } catch (e) {
+                console.error("Summary gen failed", e);
+            }
+            ct.generatingSummary = false;
+        },
+        analyzeSession(ct) {
+            // Switch to AI tab
+            this.activeTab = 'ai';
+
+            // Start new chat
+            this.startNewChat();
+
+            // Seed with transcript context (hidden system message)
+            this.messages.push({
+                role: 'system',
+                content: `You are analyzing a transcript of a tutoring session for ${this.currentUser?.displayName || 'the student'}. 
+TRANSCRIPT:
+${ct.transcript}
+
+The user will ask questions about this meeting. Answer helpfully and concisely.
+- Do NOT list your tools or capabilities.
+- Do NOT upsell features.
+- If asked to create a note, just do it.`
+            });
+
+            // Proactive AI greeting
+            this.messages.push({
+                role: 'assistant',
+                content: "I've reviewed the transcript for this session. What would you like to know about the meeting?"
+            });
+        },
         async logout() {
             try {
                 await signOut(auth);
@@ -633,8 +682,10 @@ createApp({
             if (/\b(quiz|test me|questions about|practice.*questions)/i.test(prompt)) {
                 return { tool: 'Quiz Generator', icon: 'ph-exam', agentic: true };
             }
-            if (/\b(save|create|make).*(note|notes)/i.test(prompt)) {
-                return { tool: 'Create Note', icon: 'ph-notebook', agentic: true };
+            if (/\b(save|create|make|write|add).*(note|notes)/i.test(prompt)) {
+                // If special instructions about content, treat as agentic
+                if (prompt.length > 20) return { tool: 'Create Note', icon: 'ph-note-pencil', agentic: true };
+                return { tool: 'Create Note', icon: 'ph-note-pencil', agentic: true };
             }
             if (/\b(when|what|show|view).*(session|schedule|class|next)/i.test(prompt)) {
                 return { tool: 'View Schedule', icon: 'ph-calendar', agentic: false };
@@ -642,9 +693,52 @@ createApp({
             if (/\b(my mentor|who is my|about.*mentor)/i.test(prompt)) {
                 return { tool: 'Mentor Info', icon: 'ph-user', agentic: false };
             }
-            return null;
+            return { tool: null, icon: null, agentic: false };
         },
         async executeAgenticAction(tool, prompt) {
+            if (tool === 'Create Note') {
+                try {
+                    const noteRes = await fetch('/api/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: [
+                                { role: 'system', content: 'You are a note-taking assistant. Generate a structured note based on the user request. Return JSON with "title" and "content" fields. Content should be detailed HTML.' },
+                                { role: 'user', content: prompt }
+                            ]
+                        })
+                    });
+                    const noteData = await noteRes.json();
+                    let contentStr = noteData.choices?.[0]?.message?.content || '';
+                    let title = 'New Note';
+                    let body = contentStr;
+                    try {
+                        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            title = parsed.title || title;
+                            body = parsed.content || body;
+                        } else {
+                            const lines = contentStr.split('\n');
+                            title = lines[0].replace(/^#+\s*/, '').substring(0, 50);
+                            body = contentStr;
+                        }
+                    } catch (e) { }
+
+                    const noteId = Date.now().toString();
+                    await set(ref(rtdb, `notes/${this.currentUser.uid}/${noteId}`), {
+                        id: noteId,
+                        title: title,
+                        content: body,
+                        date: new Date().toISOString(),
+                        tags: []
+                    });
+                    this.loadNotes();
+                    return { success: true, message: `I've created a note titled "**${title}**". Check your Notes tab.` };
+                } catch (e) {
+                    return { success: false, message: "Failed to create note." };
+                }
+            }
             switch (tool) {
                 case 'Book Session': {
                     if (this.assignedMentors.length === 0) {
@@ -880,17 +974,21 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
                 } else {
                     const scheduleContext = this.allSessions.slice(0, 3).map(s => `- ${this.formatSessionDate(s.date)} at ${this.formatSessionTime(s.startTime)}: ${s.subject} with ${s.mentorName}`).join('\n');
                     const mentorNames = this.assignedMentors.map(m => m.displayName || m.name).join(', ');
-                    const systemPrompt = `You are a helpful AI study assistant for students in India. 
+                    const systemPrompt = `You are a helpful AI study assistant for ${this.currentUser?.displayName || 'the student'} in India. 
 **Student's Context:**
 - Mentors: ${mentorNames || 'No mentors assigned'}
 - Upcoming Sessions: ${scheduleContext || 'None scheduled'}
 
-**Your Capabilities:**
-- Explain concepts clearly with examples
-- Help create study plans
-- Generate practice questions inline
-- Answer homework questions
-- Summarize topics
+**Guidelines:**
+- Assist **${this.currentUser?.displayName || 'the student'}** directly.
+- **Do NOT** list your capabilities or tools unless explicitly asked.
+- **Do NOT** upsell your features.
+- If asked to create a note, just do it.
+
+**Available Tools (Implicit):**
+- Create Note
+- View Schedule
+- View Info
 
 **Rules:**
 - Use markdown formatting
