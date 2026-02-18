@@ -6,91 +6,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Login</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap"
         rel="stylesheet">
-
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
     <link rel="stylesheet" href="/styles/login.css">
 </head>
 
 <body>
-
     <div class="login-container" id="main-container">
-
-        <!-- HEADER -->
         <div class="header">
             <div class="logo-large">
                 Study Buddy
             </div>
         </div>
-
-        <!-- STAGE 1: LOGIN (Visible initially) -->
         <div id="login-view">
             <h1 class="intro-text">Welcome back</h1>
-
             <button id="google-login-btn" class="login-btn">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20"
                     height="20">
                 Continue with Google
             </button>
-
             <div class="divider">or</div>
-
             <button class="login-btn" style="color: #666; justify-content: center; gap: 8px;">
                 <i class="ph-bold ph-envelope-simple" style="font-size: 1.2rem;"></i>
                 Continue with Email
             </button>
         </div>
-
-        <!-- STAGE 2: ROLE SELECTION (Hidden initially) -->
         <div id="role-selection">
             <h2 class="role-header">How do you want to use Study Buddy?</h2>
-
             <div class="role-options">
                 <div class="role-btn" onclick="selectRole('mentee')">
                     <div class="role-btn-icon"><i class="ph-bold ph-student"></i></div>
                     <span class="role-btn-text">I want to be a Student</span>
                 </div>
-
                 <div class="role-btn" onclick="selectRole('mentor')">
                     <div class="role-btn-icon"><i class="ph-bold ph-chalkboard-teacher"></i></div>
                     <span class="role-btn-text">I want to be a Mentor</span>
                 </div>
             </div>
         </div>
-
     </div>
-
-    <!-- Scripts -->
     <script type="module">
-        import { signInWithGoogle, handleRoleSelection } from '/scripts/auth.js';
+        import { signInWithGoogle, handleRoleSelection, checkAuthAndRedirect } from '/scripts/auth.js';
 
+
+        checkAuthAndRedirect();
         const loginView = document.getElementById('login-view');
         const roleSelection = document.getElementById('role-selection');
         const googleBtn = document.getElementById('google-login-btn');
 
-        // Global function for role click
         window.selectRole = async (role) => {
             await handleRoleSelection(role);
         };
 
-        // Expose UI transition function to auth.js
         window.showRoleSelection = () => {
             loginView.style.display = 'none';
             roleSelection.style.display = 'block';
         };
 
-        // Attach Login Listener
         googleBtn.addEventListener('click', async () => {
             googleBtn.classList.add('loading');
-            // Keep width to avoid jump
+
             const originalWidth = googleBtn.offsetWidth;
             googleBtn.style.width = originalWidth + 'px';
             googleBtn.innerHTML = '<span class="loader"></span>';
-
             try {
                 await signInWithGoogle();
             } catch (error) {

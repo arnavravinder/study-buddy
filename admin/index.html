@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Study Buddy</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/mentor-dashboard.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .admin-table th {
+            background: #fafafa;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-table tr:hover td {
+            background: #fafafa;
+        }
+
+        .role-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .role-mentor {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .role-student {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .role-admin {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .action-btn.danger {
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .action-btn.danger:hover {
+            background: #fef2f2;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card .value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.15s;
+        }
+
+        .tab.active {
+            background: #111;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #f5f5f5;
+        }
+
+        .assignment-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .assignment-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .assignment-arrow {
+            color: #999;
+            font-size: 1.25rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <div class="dashboard-layout">
+            <div class="sidebar">
+                <div class="logo">
+                    <i class="ph-duotone ph-shield-check" style="font-size: 2rem; color: var(--text-primary);"></i>
+                    <span>Admin Panel</span>
+                </div>
+
+                <div class="nav-menu">
+                    <div class="nav-item" :class="{active: activeTab === 'overview'}" @click="activeTab = 'overview'">
+                        <i class="ph ph-squares-four"></i>
+                        <span>Overview</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'users'}" @click="activeTab = 'users'">
+                        <i class="ph ph-users"></i>
+                        <span>Users</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'assignments'}"
+                        @click="activeTab = 'assignments'">
+                        <i class="ph ph-arrows-left-right"></i>
+                        <span>Assignments</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'sessions'}" @click="activeTab = 'sessions'">
+                        <i class="ph ph-calendar"></i>
+                        <span>Sessions</span>
+                    </div>
+                </div>
+
+                <div class="user-mini-profile">
+                    <div class="avatar-circle" style="background: #fef3c7; color: #92400e;">AD</div>
+                    <div class="info" style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 700; font-size: 0.9rem;">Admin</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <main class="main-content">
+
+                <div v-if="activeTab === 'overview'">
+                    <div class="header-area">
+                        <div>
+                            <div class="header-date">Admin Dashboard</div>
+                            <h1 class="header-title">System Overview</h1>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="icon" style="background: #dbeafe; color: #1d4ed8;">
+                                <i class="ph ph-chalkboard-teacher"></i>
+                            </div>
+                            <div class="value">{{ mentors.length }}</div>
+                            <div class="label">Total Mentors</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: #dcfce7; color: #15803d;">
+                                <i class="ph ph-student"></i>
+                            </div>
+                            <div class="value">{{ students.length }}</div>
+                            <div class="label">Total Students</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: #fef3c7; color: #d97706;">
+                                <i class="ph ph-arrows-left-right"></i>
+                            </div>
+                            <div class="value">{{ assignments.length }}</div>
+                            <div class="label">Active Assignments</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: #f3e8ff; color: #7c3aed;">
+                                <i class="ph ph-video-camera"></i>
+                            </div>
+                            <div class="value">{{ sessions.length }}</div>
+                            <div class="label">Total Sessions</div>
+                        </div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="section-label">Quick Actions</div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn" @click="showAddUserModal = true">
+                                <i class="ph ph-user-plus" style="margin-right: 0.5rem;"></i> Add User
+                            </button>
+                            <button class="btn-outline" @click="showAssignModal = true">
+                                <i class="ph ph-arrows-left-right" style="margin-right: 0.5rem;"></i> Create Assignment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'users'">
+                    <div class="header-area">
+                        <div>
+                            <h1 class="header-title">Manage Users</h1>
+                            <p style="color: #666; margin-top: 0.5rem;">Add, edit, and manage all users</p>
+                        </div>
+                        <button class="btn" @click="showAddUserModal = true">
+                            <i class="ph ph-user-plus" style="margin-right: 0.5rem;"></i> Add User
+                        </button>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab" :class="{active: userFilter === 'all'}" @click="userFilter = 'all'">All
+                            Users</button>
+                        <button class="tab" :class="{active: userFilter === 'mentor'}"
+                            @click="userFilter = 'mentor'">Mentors</button>
+                        <button class="tab" :class="{active: userFilter === 'mentee'}"
+                            @click="userFilter = 'mentee'">Students</button>
+                    </div>
+
+                    <div class="search-bar">
+                        <input type="text" v-model="searchQuery" placeholder="Search by name or email...">
+                    </div>
+
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="user in filteredUsers" :key="user.id">
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-circle"
+                                            style="width: 36px; height: 36px; font-size: 0.8rem;">
+                                            {{ getInitials(user) }}
+                                        </div>
+                                        <span style="font-weight: 600;">{{ user.displayName || user.name || 'Unknown'
+                                            }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="role-badge" :class="'role-' + user.role">{{ user.role }}</span>
+                                </td>
+                                <td>{{ formatDate(user.createdAt) }}</td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="action-btn" @click="editUser(user)">
+                                            <i class="ph ph-pencil"></i>
+                                        </button>
+                                        <button class="action-btn danger" @click="deleteUser(user)">
+                                            <i class="ph ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredUsers.length === 0">
+                                <td colspan="5" style="text-align: center; color: #999; padding: 2rem;">
+                                    No users found
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-if="activeTab === 'assignments'">
+                    <div class="header-area">
+                        <div>
+                            <h1 class="header-title">Student-Mentor Assignments</h1>
+                            <p style="color: #666; margin-top: 0.5rem;">Manage which students are assigned to which
+                                mentors</p>
+                        </div>
+                        <button class="btn" @click="showAssignModal = true">
+                            <i class="ph ph-plus" style="margin-right: 0.5rem;"></i> New Assignment
+                        </button>
+                    </div>
+
+                    <div class="search-bar">
+                        <input type="text" v-model="assignmentSearch" placeholder="Search assignments...">
+                    </div>
+
+                    <div v-for="assignment in filteredAssignments" :key="assignment.id" class="assignment-card">
+                        <div class="assignment-info">
+                            <div style="text-align: center;">
+                                <div class="avatar-circle"
+                                    style="width: 48px; height: 48px; margin-bottom: 0.25rem; background: #dcfce7; color: #15803d;">
+                                    {{ getInitials({ name: assignment.studentName }) }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #666;">Student</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">{{ assignment.studentName }}</div>
+                                <div style="font-size: 0.85rem; color: #666;">{{ assignment.studentEmail }}</div>
+                            </div>
+                        </div>
+
+                        <i class="ph ph-arrow-right assignment-arrow"></i>
+
+                        <div class="assignment-info">
+                            <div>
+                                <div style="font-weight: 600;">{{ assignment.mentorName }}</div>
+                                <div style="font-size: 0.85rem; color: #666;">{{ assignment.mentorEmail }}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div class="avatar-circle"
+                                    style="width: 48px; height: 48px; margin-bottom: 0.25rem; background: #dbeafe; color: #1d4ed8;">
+                                    {{ getInitials({ name: assignment.mentorName }) }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #666;">Mentor</div>
+                            </div>
+                        </div>
+
+                        <button class="action-btn danger" @click="removeAssignment(assignment)">
+                            <i class="ph ph-x"></i> Remove
+                        </button>
+                    </div>
+
+                    <div v-if="filteredAssignments.length === 0"
+                        style="text-align: center; padding: 3rem; color: #999;">
+                        <i class="ph ph-users" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                        <p>No assignments yet. Click "New Assignment" to get started.</p>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'sessions'">
+                    <div class="header-area">
+                        <div>
+                            <h1 class="header-title">All Sessions</h1>
+                            <p style="color: #666; margin-top: 0.5rem;">View and manage all scheduled sessions</p>
+                        </div>
+                    </div>
+
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Subject</th>
+                                <th>Mentor</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="session in sessions" :key="session.id">
+                                <td>{{ formatSessionDateTime(session) }}</td>
+                                <td>{{ session.subject }}</td>
+                                <td>{{ session.mentorName }}</td>
+                                <td>{{ session.studentName }}</td>
+                                <td>
+                                    <span class="role-badge"
+                                        :class="'role-' + (session.status === 'completed' ? 'mentor' : 'student')">
+                                        {{ session.status || 'scheduled' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="action-btn danger" @click="deleteSession(session)">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr v-if="sessions.length === 0">
+                                <td colspan="6" style="text-align: center; color: #999; padding: 2rem;">
+                                    No sessions found
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </main>
+        </div>
+
+        <div v-if="showAddUserModal" class="modal-overlay" @click.self="showAddUserModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>{{ editingUser ? 'Edit User' : 'Add New User' }}</h2>
+                    <button class="modal-close" @click="showAddUserModal = false; editingUser = null;"><i
+                            class="ph ph-x"></i></button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Email</label>
+                    <input type="email" v-model="newUser.email" placeholder="user@example.com" :disabled="editingUser">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Display Name</label>
+                    <input type="text" v-model="newUser.displayName" placeholder="Full Name">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>Role</label>
+                    <select v-model="newUser.role">
+                        <option value="mentee">Student</option>
+                        <option value="mentor">Mentor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <button class="btn" @click="saveUser" style="width: 100%;">
+                    {{ editingUser ? 'Update User' : 'Add User' }}
+                </button>
+            </div>
+        </div>
+
+        <div v-if="showAssignModal" class="modal-overlay" @click.self="showAssignModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create Assignment</h2>
+                    <button class="modal-close" @click="showAssignModal = false"><i class="ph ph-x"></i></button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Student Email</label>
+                    <input type="email" v-model="assignmentData.studentEmail" placeholder="student@example.com"
+                        list="students-list">
+                    <datalist id="students-list">
+                        <option v-for="s in students" :key="s.id" :value="s.email">{{ s.displayName }}</option>
+                    </datalist>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>Mentor Email</label>
+                    <input type="email" v-model="assignmentData.mentorEmail" placeholder="mentor@example.com"
+                        list="mentors-list">
+                    <datalist id="mentors-list">
+                        <option v-for="m in mentors" :key="m.id" :value="m.email">{{ m.displayName }}</option>
+                    </datalist>
+                </div>
+
+                <button class="btn" @click="createAssignment" style="width: 100%;">
+                    <i class="ph ph-arrows-left-right" style="margin-right: 0.5rem;"></i> Create Assignment
+                </button>
+            </div>
+        </div>
+
+        <div id="toast" :style="{ opacity: showToast ? 1 : 0 }"
+            style="position: fixed; bottom: 20px; right: 20px; background: #222; color: white; padding: 12px 24px; border-radius: 12px; transition: all 0.3s; pointer-events: none; z-index: 10000;">
+            {{ toastMessage }}
+        </div>
+
+    </div>
+
+    <script type="module" src="/scripts/admin.js"></script>
+</body>
+
+</html>

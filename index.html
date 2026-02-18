@@ -13,14 +13,10 @@
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap"
         rel="stylesheet">
-
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-
     <link rel="stylesheet" href="/styles/landing.css">
     <link rel="stylesheet" href="/styles/login.css">
-
     <style>
         #main-container {
             display: none;
@@ -41,19 +37,15 @@
 </head>
 
 <body>
-
     <div class="transition-overlay"></div>
-
     <div class="container" id="landing-container">
         <header class="header">
             <div class="logo">
                 Study Buddy
             </div>
-
             <nav class="nav-links">
             </nav>
         </header>
-
         <main class="hero">
             <h1 class="headline">
                 Unlock your academic
@@ -69,7 +61,6 @@
                 Experience a new era of learning. Connect with expert mentors and master every subject in a community
                 dedicated to your success.
             </p>
-
             <div class="cta-wrapper">
                 <a href="#" class="cta-arrow" id="ctaBtn">
                     <i class="ph-fill ph-paper-plane-right"></i>
@@ -77,82 +68,88 @@
                 <span class="cta-text">Get Started</span>
             </div>
         </main>
-
         <div></div>
     </div>
-
     <div class="login-container" id="main-container">
-
         <div class="header" style="justify-content: center; animation: none; opacity: 1;">
             <div class="logo-large">
                 Study Buddy
             </div>
         </div>
-
         <div id="login-view">
-            <h1 class="intro-text">Welcome back</h1>
-
+            <h1 class="intro-text">Welcome</h1>
             <button id="google-login-btn" class="login-btn">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20"
                     height="20">
                 Continue with Google
             </button>
-
             <div class="divider">or</div>
-
             <button class="login-btn" style="color: #666; justify-content: center; gap: 8px;">
                 <i class="ph-bold ph-envelope-simple" style="font-size: 1.2rem;"></i>
                 Continue with Email
             </button>
+            <button id="logout-btn" class="login-btn"
+                style="display: none; margin-top: 16px; background: #fee2e2; color: #b91c1c; justify-content: center; gap: 8px;">
+                <i class="ph-bold ph-sign-out" style="font-size: 1.2rem;"></i>
+                Sign Out
+            </button>
         </div>
-
         <div id="role-selection">
             <h2 class="role-header">How do you want to use Study Buddy?</h2>
-
             <div class="role-options">
                 <div class="role-btn" onclick="selectRole('mentee')">
                     <div class="role-btn-icon"><i class="ph-bold ph-student"></i></div>
                     <span class="role-btn-text">I want to be a Student</span>
                 </div>
-
                 <div class="role-btn" onclick="selectRole('mentor')">
                     <div class="role-btn-icon"><i class="ph-bold ph-chalkboard-teacher"></i></div>
                     <span class="role-btn-text">I want to be a Mentor</span>
                 </div>
             </div>
         </div>
-
     </div>
-
     <script type="module">
-        import { signInWithGoogle, handleRoleSelection } from '/scripts/auth.js';
+        import { signInWithGoogle, handleRoleSelection, checkAuthAndRedirect, logout } from '/scripts/auth.js';
+        import { auth } from '/scripts/firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+
+        checkAuthAndRedirect();
         const ctaBtn = document.getElementById('ctaBtn');
         const loginContainer = document.getElementById('main-container');
         const landingContainer = document.getElementById('landing-container');
         const overlay = document.querySelector('.transition-overlay');
         const landingText = document.querySelector('.hero');
-
         const loginView = document.getElementById('login-view');
         const roleSelection = document.getElementById('role-selection');
         const googleBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && logoutBtn) {
+                logoutBtn.style.display = 'flex';
+            } else if (logoutBtn) {
+                logoutBtn.style.display = 'none';
+            }
+        });
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
 
         window.selectRole = async (role) => {
             await handleRoleSelection(role);
         };
-
         window.showRoleSelection = () => {
             loginView.style.display = 'none';
             roleSelection.style.display = 'block';
         };
-
         if (googleBtn) {
             googleBtn.addEventListener('click', async () => {
                 googleBtn.classList.add('loading');
                 const originalWidth = googleBtn.offsetWidth;
                 googleBtn.style.width = originalWidth + 'px';
                 googleBtn.innerHTML = '<span class="loader"></span>';
-
                 try {
                     await signInWithGoogle();
                 } catch (error) {
@@ -163,25 +160,17 @@
                 }
             });
         }
-
-
         if (ctaBtn) {
             ctaBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                console.log('✈️ Starting Animation!');
-
                 const icon = ctaBtn.querySelector('i');
                 const btnRect = ctaBtn.getBoundingClientRect();
                 const btnCenterX = btnRect.left + btnRect.width / 2;
                 const btnCenterY = btnRect.top + btnRect.height / 2;
-
                 icon.style.position = 'absolute';
-
                 const tl = gsap.timeline();
-
                 const orbitRadius = 145;
                 const orbitDuration = 1.2;
-
                 tl.to(icon, {
                     duration: orbitDuration,
                     ease: 'linear',
@@ -194,12 +183,9 @@
                         gsap.set(icon, { x: x, y: y, rotation: rotation });
                     }
                 });
-
                 const targetX = window.innerWidth - btnCenterX + 50;
                 const targetY = -btnCenterY - 50;
-
                 tl.addLabel('flight');
-
                 tl.to(icon, {
                     x: targetX,
                     y: targetY,
@@ -207,18 +193,15 @@
                     duration: 1.3,
                     ease: 'power2.in'
                 }, 'flight');
-
                 tl.to(landingText.querySelectorAll('.headline, .subheadline, .cta-text'), {
                     opacity: 0,
                     duration: 1,
                     ease: 'power2.out'
                 }, 'flight-=0.3');
-
                 tl.to(ctaBtn, {
                     opacity: 0,
                     duration: 0.3
                 }, 'flight+=1.3');
-
                 if (overlay) {
                     tl.to(overlay, {
                         opacity: 1,
@@ -226,15 +209,12 @@
                         ease: 'power2.inOut'
                     }, 'flight-=0.1');
                 }
-
                 tl.add(() => {
                     icon.style.opacity = '0';
-                    console.log('✨ Revealing Login Container');
                     landingContainer.style.display = 'none';
                     ctaBtn.style.display = 'none';
                     loginContainer.style.display = 'block';
                 });
-
                 tl.to(loginContainer, {
                     opacity: 1,
                     duration: 0.6,
@@ -243,7 +223,6 @@
             });
         }
     </script>
-
     <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
         <filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="3" result="noise" seed="5" />

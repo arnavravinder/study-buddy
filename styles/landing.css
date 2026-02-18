@@ -1,6 +1,4 @@
-/* Landing Page Styles - Refined & Clean */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
-
 body {
     margin: 0;
     padding: 0;
@@ -14,7 +12,6 @@ body {
     background-repeat: no-repeat;
     position: relative;
 }
-
 body::before {
     content: '';
     position: absolute;
@@ -26,7 +23,6 @@ body::before {
     pointer-events: none;
     z-index: 0;
 }
-
 .container {
     height: 100%;
     display: flex;
@@ -37,8 +33,6 @@ body::before {
     position: relative;
     z-index: 1;
 }
-
-/* Transition Overlay */
 .transition-overlay {
     position: fixed;
     top: 0;
@@ -53,12 +47,9 @@ body::before {
     z-index: 10;
     transition: opacity 1.5s ease-in-out;
 }
-
 .transition-overlay.active {
     opacity: 1;
 }
-
-/* Header */
 .header {
     display: flex;
     justify-content: space-between;
@@ -67,7 +58,6 @@ body::before {
     animation: fadeInDown 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     animation-delay: 0.2s;
 }
-
 .logo {
     font-weight: 700;
     font-size: 1.5rem;
@@ -78,15 +68,12 @@ body::before {
     gap: 0.5rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-/* Hero Content */
 .hero {
     text-align: center;
     max-width: 900px;
     align-self: center;
     margin-top: -5vh;
 }
-
 .headline {
     font-size: 5rem;
     font-weight: 500;
@@ -100,7 +87,6 @@ body::before {
     animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     animation-delay: 0.4s;
 }
-
 .subheadline {
     font-size: 1.25rem;
     font-weight: 400;
@@ -116,8 +102,6 @@ body::before {
     animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     animation-delay: 0.6s;
 }
-
-/* CTA Arrow Button - CLEAN LIQUID GLASS */
 .cta-wrapper {
     display: flex;
     flex-direction: column;
@@ -126,7 +110,6 @@ body::before {
     opacity: 1;
     transform: translateY(0);
 }
-
 .cta-arrow {
     display: inline-flex;
     align-items: center;
@@ -146,22 +129,18 @@ body::before {
     z-index: 20;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
-
 .cta-arrow i {
     font-size: 2rem;
     transition: transform 0.3s ease;
 }
-
 .cta-arrow:hover {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
     border-color: rgba(255, 255, 255, 0.9);
     transform: scale(1.05);
 }
-
 .cta-arrow:hover i {
     transform: translate(2px, -2px) rotate(-10deg);
 }
-
 .cta-text {
     font-size: 0.9rem;
     font-weight: 500;
@@ -170,62 +149,45 @@ body::before {
     text-transform: uppercase;
     transition: color 0.3s;
 }
-
 .cta-wrapper:hover .cta-text {
     color: #fff;
 }
-
-/* =============================================
-   EXIT ANIMATION - Handled by GSAP
-   ============================================= */
-
 .cta-arrow.exiting {
     z-index: 30;
     background: rgba(255, 255, 255, 0.5) !important;
     border-color: #fff !important;
 }
-
-/* Icon gets animated by GSAP */
 .cta-arrow i {
     display: inline-block;
 }
-
-/* Base Animations */
 @keyframes fadeInUp {
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-
 @keyframes fadeInDown {
     from {
         opacity: 0;
         transform: translateY(-20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-
 @keyframes drawPath {
     from {
         stroke-dashoffset: 200;
     }
-
     to {
         stroke-dashoffset: 0;
     }
 }
-
-/* Flourish Styles */
 .highlight-container {
     position: relative;
     display: inline-block;
 }
-
 .flourish-underline {
     position: absolute;
     bottom: -15px;
@@ -235,7 +197,6 @@ body::before {
     overflow: visible;
     z-index: -1;
 }
-
 .flourish-underline path {
     stroke-dasharray: 200;
     stroke-dashoffset: 200;
@@ -243,17 +204,13 @@ body::before {
     animation-delay: 1.2s;
     opacity: 0.9;
 }
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .headline {
         font-size: 3.5rem;
     }
-
     .flourish-underline {
         bottom: -10px;
     }
-
     .container {
         padding: 1.5rem;
     }

@@ -1,843 +1,1544 @@
-const { createApp } = Vue;
-
+import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+import { db, rtdb, auth } from './firebase-config.js';
+import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, onValue, push, set, update, remove, serverTimestamp, query as rtdbQuery, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 createApp({
     data() {
         return {
-            activeTab: 'overview',
-            sidebarOpen: false, /* Mobile Sidebar State */
-            showAiChat: false, /* AI Chat Widget State */
-            aiHistory: [
-                { id: 1, title: 'Chemistry Exam Prep' },
-                { id: 2, title: 'Calculus Derivatives' },
-                { id: 3, title: 'Romeo & Juliet Themes' },
-                { id: 4, title: 'Physics Formula Sheet' }
-            ],
-            holidayMode: false,
-            showAskQuestionModal: false,
-            showBookingConfirmation: false,
-            showNotesPanel: false,
-            showWhiteboardPanel: false,
-            chatInput: '',
-            explainMore: false,
-            conversationHistory: [],
-            currentMonthIndex: new Date().getMonth(),
-            currentYear: new Date().getFullYear(),
-            communityFilter: 'all',
-            eventFilter: 'all',
-            selectedMentor: null,
-            mentorChatInput: '',
-            /* AI Chat State */
-            aiMessages: [], // Messages for the full-screen AI page
-            aiConversationHistory: [], // Context for the AI
-            aiIsTyping: false,
+            isLoading: true,
+            authProcessed: false,
+            currentUser: null,
+            activeTab: 'dashboard',
+            settingsSection: 'profile',
+            assignedMentors: [],
+            sessions: [],
+            pendingBookings: [],
+            chats: [],
+            activeChat: null,
+            activeMessages: [],
+            newMessage: '',
+            showVideoModal: false,
+            agoraClient: null,
+            localAudioTrack: null,
+            localVideoTrack: null,
+            videoMuted: false,
+            audioMuted: false,
+            remoteUser: null,
+            currentChannel: '',
+            wbTool: 'pen',
+            wbColor: '#1e1e1e',
+            wbSize: 4,
+            showOptionsPanel: false,
+            isDrawing: false,
+            paths: [],
+            currentPath: null,
+            canvas: null,
+            ctx: null,
+            aiSidebarTab: 'chats',
+            messages: [],
             aiInput: '',
-            aiCurrentModel: 'openai/gpt-4o-mini',
-            scheduleForm: {
+            isAiThinking: false,
+            chatHistory: [],
+            currentToolUsed: null,
+            quizMessages: [],
+            quizInput: '',
+            quizStep: 'topic',
+            quizTopic: '',
+            isGeneratingQuiz: false,
+            activeQuiz: null,
+            savedQuizzes: [],
+            assignedQuizzes: [],
+            callTranscripts: [],
+            notes: [],
+            activeNote: null,
+            noteTitle: '',
+            noteContent: '',
+            saveTimeout: null,
+            chatSearch: '',
+            showConfirmModal: false,
+            confirmTitle: '',
+            confirmMessage: '',
+            confirmBtnText: 'Delete',
+            confirmCallback: null,
+            settings: {
+                sessionReminders: true,
+                messageAlerts: true,
+                quizAlerts: true,
+                emailNotifications: true
+            },
+            profileData: {
+                displayName: '',
+                grade: '12'
+            },
+            showBookingModal: false,
+            bookingData: {
+                mentorId: '',
                 subject: '',
-                coach: '',
                 date: '',
                 time: '',
-                reason: ''
+                duration: 60,
+                notes: ''
             },
-            bookingDetails: {
-                subject: '',
-                coach: '',
-                date: '',
-                time: ''
-            },
-            flatpickrInstance: null,
-            newQuestion: {
-                subject: '',
-                title: '',
-                body: ''
-            },
-            notes: [
-                {
-                    id: 1,
-                    title: 'Organic Chemistry - Hydrocarbons',
-                    preview: 'Alkanes, alkenes, alkynes and their properties...',
-                    subject: 'Chemistry',
-                    date: 'Oct 15, 2025',
-                    content: '<h3>Hydrocarbons Overview</h3><p><strong>Alkanes</strong> - Saturated hydrocarbons with single bonds (CnH2n+2)</p><p>Examples: Methane (CH4), Ethane (C2H6), Propane (C3H8)</p><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-lightbulb"></i></div><div class="enhancement-content"><strong>💡 Related Discussion:</strong> You also discussed <em>combustion reactions of alkanes</em> with Priya in your last session. She mentioned these are important for the exam!</div></div><p><strong>Alkenes</strong> - Unsaturated hydrocarbons with double bonds (CnH2n)</p><p>Examples: Ethene (C2H4), Propene (C3H6)</p><p><strong>Alkynes</strong> - Unsaturated hydrocarbons with triple bonds (CnH2n-2)</p><p>Examples: Ethyne (C2H2), Propyne (C3H4)</p><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-chat-circle-dots"></i></div><div class="enhancement-content"><strong>📚 Tutor Tip:</strong> Priya suggested creating a comparison table for these three hydrocarbon types - it helps visualize the differences!</div></div><p><u>Important Notes:</u></p><ul><li>Alkanes are generally unreactive</li><li>Alkenes undergo addition reactions</li><li>Alkynes are the most reactive</li></ul>'
-                },
-                {
-                    id: 2,
-                    title: 'Calculus - Differentiation Rules',
-                    preview: 'Power rule, product rule, quotient rule, chain rule...',
-                    subject: 'Mathematics',
-                    date: 'Oct 14, 2025',
-                    content: '<h3>Differentiation Rules</h3><p><strong>Power Rule:</strong> d/dx(x^n) = nx^(n-1)</p><p><strong>Product Rule:</strong> d/dx(uv) = u(dv/dx) + v(du/dx)</p><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-chalkboard-teacher"></i></div><div class="enhancement-content"><strong>👨‍🏫 Session Note:</strong> Amit emphasized the <em>product rule</em> is often confused with simple multiplication - remember to differentiate each part separately!</div></div><p><strong>Quotient Rule:</strong> d/dx(u/v) = [v(du/dx) - u(dv/dx)] / v^2</p><p><strong>Chain Rule:</strong> d/dx[f(g(x))] = f\'(g(x)) × g\'(x)</p><p><u>Practice Problems:</u></p><p>1. Find d/dx(3x^4 + 2x^2 - 5)</p><p>2. Differentiate (x^2 + 1)(x^3 - 2x)</p><p>3. Find the derivative of sin(2x^2)</p><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-trophy"></i></div><div class="enhancement-content"><strong>🎯 Coach Recommendation:</strong> Amit said to practice chain rule problems daily - they appear frequently on the exam!</div></div>'
-                },
-                {
-                    id: 3,
-                    title: 'English Literature - Persuasive Essay Tips',
-                    preview: 'Introduction hooks, thesis statements, body structure...',
-                    subject: 'English',
-                    date: 'Oct 12, 2025',
-                    content: '<h3>Persuasive Essay Structure</h3><p><strong>Introduction (3-5 sentences)</strong></p><ul><li>Hook: Start with a question, fact, or quote</li><li>Background: Provide context</li><li>Thesis: State your position clearly</li></ul><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-pencil-line"></i></div><div class="enhancement-content"><strong>✍️ Mentor Insight:</strong> Neha reviewed your last essay and loved your hook! She suggested you explore <em>rhetorical questions</em> more often for stronger openings.</div></div><p><strong>Body Paragraphs (3-4 paragraphs)</strong></p><ul><li>Topic sentence introducing the main point</li><li>Evidence and examples</li><li>Analysis and explanation</li><li>Transition to next paragraph</li></ul><p><strong>Conclusion (3-4 sentences)</strong></p><ul><li>Restate thesis in new words</li><li>Summarize key points</li><li>Call to action or final thought</li></ul><div class="note-enhancement"><div class="enhancement-icon"><i class="ph-bold ph-bookmark"></i></div><div class="enhancement-content"><strong>📖 From Session:</strong> You discussed <em>counterarguments</em> with Neha - she said addressing opposing views strengthens your credibility!</div></div><p><u>Key Persuasive Techniques:</u></p><p>• Ethos (credibility) • Pathos (emotion) • Logos (logic)</p>'
-                },
-                {
-                    id: 4,
-                    title: 'Physics - Newton\'s Laws of Motion',
-                    preview: 'Three fundamental laws governing motion and forces...',
-                    subject: 'Physics',
-                    date: 'Oct 10, 2025',
-                    content: '<h3>Newton\'s Three Laws</h3><p><strong>First Law (Inertia):</strong></p><p>An object at rest stays at rest, and an object in motion stays in motion at constant velocity unless acted upon by a net external force.</p><p><strong>Second Law (F = ma):</strong></p><p>The acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass.</p><p>Formula: F = ma</p><p><strong>Third Law (Action-Reaction):</strong></p><p>For every action, there is an equal and opposite reaction.</p><p><u>Real-world Examples:</u></p><ul><li>Seatbelts (First Law)</li><li>Pushing a shopping cart (Second Law)</li><li>Rocket propulsion (Third Law)</li></ul>'
-                },
-                {
-                    id: 5,
-                    title: 'Biology - Cell Structure',
-                    preview: 'Organelles and their functions in eukaryotic cells...',
-                    subject: 'Biology',
-                    date: 'Oct 8, 2025',
-                    content: '<h3>Eukaryotic Cell Organelles</h3><p><strong>Nucleus:</strong> Control center, contains DNA</p><p><strong>Mitochondria:</strong> Powerhouse of the cell, produces ATP through cellular respiration</p><p><strong>Ribosomes:</strong> Protein synthesis</p><p><strong>Endoplasmic Reticulum (ER):</strong></p><ul><li>Rough ER: Protein transport</li><li>Smooth ER: Lipid synthesis</li></ul><p><strong>Golgi Apparatus:</strong> Modifies and packages proteins</p><p><strong>Lysosomes:</strong> Digestion and waste removal</p><p><strong>Cell Membrane:</strong> Controls what enters/exits the cell</p><p><u>Plant Cell Additional Organelles:</u></p><ul><li>Chloroplasts (photosynthesis)</li><li>Cell wall (structure and support)</li><li>Large central vacuole (storage)</li></ul>'
-                },
-                {
-                    id: 6,
-                    title: 'Chemistry - Periodic Table Trends',
-                    preview: 'Atomic radius, ionization energy, electronegativity...',
-                    subject: 'Chemistry',
-                    date: 'Oct 5, 2025',
-                    content: '<h3>Periodic Trends</h3><p><strong>Atomic Radius:</strong></p><p>• Increases down a group (more shells)</p><p>• Decreases across a period (more protons pull electrons closer)</p><p><strong>Ionization Energy:</strong></p><p>• Decreases down a group</p><p>• Increases across a period</p><p>• Energy required to remove an electron</p><p><strong>Electronegativity:</strong></p><p>• Decreases down a group</p><p>• Increases across a period</p><p>• Ability to attract electrons in a bond</p><p><strong>Metallic Character:</strong></p><p>• Increases down a group</p><p>• Decreases across a period</p><p><u>Remember:</u> Fluorine is the most electronegative element!</p>'
-                }
-            ],
-            selectedNote: null,
-            aiNoteSuggestion: {
-                description: 'Add a summary section to help with quick review',
-                suggestion: '📝 Summary: This note covers the key concepts of hydrocarbons including alkanes (single bonds), alkenes (double bonds), and alkynes (triple bonds). Remember: reactivity increases from alkanes to alkynes!',
-                dismissed: false
-            },
-            wbTool: 'pen',
-            wbPenSize: 4,
-            wbColor: '#2D3748',
-            wbColors: ['#2D3748', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
-            whiteboardContext: null,
-            isDrawing: false,
-            wbHistory: [],
-            /* Chat */
-            chatInput: '', // For the widget
-            isAiTyping: false,
-            chatMessages: [ // For the widget
-                {
-                    id: 1,
-                    sender: 'ai',
-                    content: 'Hi! I\'m your AI study assistant. How can I help you today?'
-                }
-            ],
-            /* Full Screen AI Messages Initial State */
-            aiMessages: [],
-            aiHistory: [
-                { id: 1, title: 'Chemistry Exam Prep' },
-                { id: 2, title: 'Calculus Derivatives' },
-                { id: 3, title: 'Romeo & Juliet Themes' },
-                { id: 4, title: 'Physics Formula Sheet' }
-            ],
-            mySubjects: [
-                {
-                    name: 'Chemistry',
-                    progress: 78,
-                    sessions: 8,
-                    coach: 'Priya Sharma'
-                },
-                {
-                    name: 'Mathematics',
-                    progress: 65,
-                    sessions: 12,
-                    coach: 'Amit Patel'
-                },
-                {
-                    name: 'English',
-                    progress: 82,
-                    sessions: 6,
-                    coach: 'Neha Singh'
-                },
-                {
-                    name: 'Biology',
-                    progress: 70,
-                    sessions: 5,
-                    coach: 'Divya Kapoor'
-                }
-            ],
-            availableDays: [
-                { name: 'Monday', available: true },
-                { name: 'Tuesday', available: true },
-                { name: 'Wednesday', available: false },
-                { name: 'Thursday', available: true },
-                { name: 'Friday', available: true },
-                { name: 'Saturday', available: false },
-                { name: 'Sunday', available: false }
-            ],
-            upcomingSessions: [
-                {
-                    id: 1,
-                    time: '3:00 PM',
-                    subject: 'Chemistry',
-                    coach: 'Priya Sharma'
-                },
-                {
-                    id: 2,
-                    time: '4:30 PM',
-                    subject: 'Mathematics',
-                    coach: 'Amit Patel'
-                },
-                {
-                    id: 3,
-                    time: '6:00 PM',
-                    subject: 'English',
-                    coach: 'Neha Singh'
-                }
-            ],
-            calendarEvents: [
-                { id: 1, type: 'Session', title: 'Chemistry Session', description: 'with Priya Sharma', date: '2025-10-18', color: '#6a9ff5' },
-                { id: 2, type: 'Exam', title: 'Mathematics Mock Exam', description: 'CIE IGCSE Paper 2', date: '2025-10-25', color: '#ef4444' },
-                { id: 3, type: 'Assessment', title: 'English Essay Submission', description: 'Coursework Deadline', date: '2025-10-22', color: '#f59e0b' },
-                { id: 4, type: 'Holiday', title: 'Diwali Break', description: 'School Holiday', date: '2025-11-01', color: '#8b5cf6' },
-                { id: 5, type: 'Exam', title: 'Chemistry Practical Exam', description: 'CIE IGCSE Paper 3', date: '2025-11-08', color: '#ef4444' },
-                { id: 6, type: 'Session', title: 'Mathematics Session', description: 'with Amit Patel', date: '2025-10-19', color: '#6a9ff5' },
-                { id: 7, type: 'Assessment', title: 'Physics Lab Report', description: 'Coursework Deadline', date: '2025-10-28', color: '#f59e0b' },
-                { id: 8, type: 'Holiday', title: 'Republic Day', description: 'National Holiday', date: '2025-01-26', color: '#8b5cf6' },
-                { id: 9, type: 'Exam', title: 'English Literature Exam', description: 'CIE IGCSE Paper 1', date: '2025-11-15', color: '#ef4444' }
-            ],
-            communityQuestions: [
-                { id: 1, subject: 'Mathematics', title: 'How to solve quadratic equations with complex roots?', body: 'I am stuck on a problem where the discriminant is negative...', userName: 'Ananya Reddy', userInitials: 'AR', time: '2 hours ago', answers: 5, upvotes: 12 },
-                { id: 2, subject: 'Chemistry', title: 'Need help with balancing redox reactions', body: 'Can someone explain the half-reaction method?', userName: 'Rohan Gupta', userInitials: 'RG', time: '4 hours ago', answers: 3, upvotes: 8 },
-                { id: 3, subject: 'English', title: 'Tips for writing a persuasive essay?', body: 'I have an essay due next week and need some guidance on structure...', userName: 'Kavya Iyer', userInitials: 'KI', time: '1 day ago', answers: 7, upvotes: 15 },
-                { id: 4, subject: 'Physics', title: 'Confusion about Newton\'s third law', body: 'If action and reaction are equal, why do things move?', userName: 'Arjun Menon', userInitials: 'AM', time: '3 hours ago', answers: 10, upvotes: 20 },
-                { id: 5, subject: 'Mathematics', title: 'Trigonometry identities help', body: 'How do I prove sin²x + cos²x = 1?', userName: 'Priyanka Das', userInitials: 'PD', time: '5 hours ago', answers: 6, upvotes: 9 },
-                { id: 6, subject: 'Biology', title: 'Difference between mitosis and meiosis?', body: 'I always get confused between these two processes...', userName: 'Sanjay Verma', userInitials: 'SV', time: '6 hours ago', answers: 4, upvotes: 11 }
-            ],
-            mentors: [
-                { id: 1, name: 'Priya Sharma', subject: 'Chemistry', initials: 'PS', lastMessage: 'Great work on the assignment!', unread: 2 },
-                { id: 2, name: 'Amit Patel', subject: 'Mathematics', initials: 'AP', lastMessage: 'See you at the next session', unread: 0 },
-                { id: 3, name: 'Neha Singh', subject: 'English', initials: 'NS', lastMessage: 'Your essay looks good', unread: 1 }
-            ],
-            mentorMessages: [],
-            availableCoaches: {
-                chemistry: [
-                    { id: 1, name: 'Priya Sharma', rating: 4.8 },
-                    { id: 2, name: 'Vikram Desai', rating: 4.7 }
-                ],
-                mathematics: [
-                    { id: 3, name: 'Amit Patel', rating: 4.9 },
-                    { id: 4, name: 'Sanjana Kumar', rating: 4.6 }
-                ],
-                english: [
-                    { id: 5, name: 'Neha Singh', rating: 4.8 },
-                    { id: 6, name: 'Rahul Verma', rating: 4.5 }
-                ],
-                physics: [
-                    { id: 7, name: 'Arjun Nair', rating: 4.7 },
-                    { id: 8, name: 'Meera Joshi', rating: 4.9 }
-                ],
-                biology: [
-                    { id: 9, name: 'Divya Kapoor', rating: 4.6 },
-                    { id: 10, name: 'Karthik Rao', rating: 4.8 }
-                ]
-            }
+            datePicker: null,
+            timePicker: null,
+            mentorAvailability: null,
+            showToast: false,
+            toastMessage: '',
+            dropdowns: {}
         };
     },
     computed: {
-        currentMonth() {
-            const months = [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-            ];
-            return `${months[this.currentMonthIndex]} ${this.currentYear}`;
+        greeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Morning';
+            if (hour < 18) return 'Afternoon';
+            return 'Evening';
         },
-        filteredQuestions() {
-            if (this.communityFilter === 'all') {
-                return this.communityQuestions;
-            }
-            return this.communityQuestions.filter(q => q.subject.toLowerCase() === this.communityFilter);
+        currentDate() {
+            return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         },
-        filteredEvents() {
-            if (this.eventFilter === 'all') {
-                return this.calendarEvents;
+        userInitials() {
+            if (!this.currentUser) return 'ST';
+            const name = this.currentUser.displayName || this.currentUser.name || this.currentUser.email || '';
+            const parts = name.split(' ');
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
             }
-            return this.calendarEvents.filter(e => e.type.toLowerCase() === this.eventFilter);
+            return name.substring(0, 2).toUpperCase() || 'ST';
         },
-        calendarDays() {
-            const firstDay = new Date(this.currentYear, this.currentMonthIndex, 1);
-            const lastDay = new Date(this.currentYear, this.currentMonthIndex + 1, 0);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-            const days = [];
-            const today = new Date();
-
-            for (let i = 0; i < 42; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i);
-
-                const isToday = currentDate.toDateString() === today.toDateString();
-
-                const dayEvents = this.calendarEvents.filter(event => {
-                    const eventDate = new Date(event.date);
-                    return eventDate.getDate() === currentDate.getDate() &&
-                        eventDate.getMonth() === currentDate.getMonth() &&
-                        eventDate.getFullYear() === currentDate.getFullYear();
-                });
-
-                days.push({
-                    date: currentDate.toDateString(),
-                    day: currentDate.getDate(),
-                    isToday,
-                    isCurrentMonth: currentDate.getMonth() === this.currentMonthIndex,
-                    events: dayEvents
-                });
-            }
-
-            return days;
+        todaysSessions() {
+            const today = new Date().toISOString().split('T')[0];
+            return this.sessions.filter(s => s.date === today);
+        },
+        allSessions() {
+            const now = new Date();
+            return this.sessions
+                .filter(s => new Date(s.date) >= new Date(now.toISOString().split('T')[0]))
+                .sort((a, b) => new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime));
+        },
+        quizProgress() {
+            if (!this.activeQuiz || !this.activeQuiz.questions) return 0;
+            const answered = this.activeQuiz.questions.filter(q => q.answered).length;
+            return (answered / this.activeQuiz.questions.length) * 100;
+        },
+        availableTimeSlots() {
+            const allSlots = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
+            const selectedDate = this.bookingData.date;
+            if (!selectedDate) return allSlots.map(t => ({ time: t, available: true }));
+            const bookedTimes = this.sessions
+                .filter(s => s.date === selectedDate && s.status !== 'cancelled')
+                .map(s => s.startTime || s.time);
+            return allSlots.map(t => ({
+                time: t,
+                available: !bookedTimes.includes(t)
+            }));
+        },
+        renderedNote() {
+            return '';
+        },
+        filteredChats() {
+            if (!this.chatSearch.trim()) return this.chats;
+            const q = this.chatSearch.toLowerCase();
+            return this.chats.filter(chat => {
+                const name = (chat.mentorName || chat.studentName || '').toLowerCase();
+                const msg = (chat.lastMessage || '').toLowerCase();
+                return name.includes(q) || msg.includes(q);
+            });
         }
     },
-    methods: {
-        toggleHolidayMode() {
-            this.holidayMode = !this.holidayMode;
-            if (this.holidayMode) {
-                document.body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.remove('dark-mode');
-                localStorage.setItem('theme', 'light');
-            }
-        },
-        toggleSidebar() {
-            this.sidebarOpen = !this.sidebarOpen;
-        },
-        /* AI Page Methods */
-        startNewChat() {
-            this.aiMessages = [];
-            this.aiInput = '';
-            this.aiConversationHistory = [];
-        },
-        sendSuggestion(text) {
-            this.aiInput = text;
-            this.sendAiMessage();
-        },
-        /* OpenRouter Integration for AI Page */
-        async sendAiMessage() {
-            if (!this.aiInput.trim()) return;
-
-            // 1. Add User Message
-            const userMsg = {
-                id: Date.now(),
-                sender: 'user',
-                content: this.aiInput
-            };
-            this.aiMessages.push(userMsg);
-
-            const userText = this.aiInput;
-            this.aiInput = ''; // Clear input
-            this.scrollToAiBottom();
-
-            // 2. Add AI Placeholder
-            const aiMsgId = Date.now() + 1;
-            this.aiMessages.push({
-                id: aiMsgId,
-                sender: 'ai',
-                content: '<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>'
-            });
-            this.scrollToAiBottom();
-            this.aiIsTyping = true;
-
-            // 3. Prepare Context
-            // Update history for context window
-            this.aiConversationHistory.push({ role: 'user', content: userText });
-
-            // Limit history to last 10 messages to save tokens/context
-            if (this.aiConversationHistory.length > 10) {
-                this.aiConversationHistory = this.aiConversationHistory.slice(-10);
-            }
-
-            try {
-                const apiKey = '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';
-                const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-
-                const systemPrompt = {
-                    role: 'system',
-                    content: 'You are a helpful AI study buddy for a high school student. You explain complex topics simply, help with homework, and provide study tips. Use Markdown for formatting. Use LaTeX for math: $E=mc^2$ for inline, $$E=mc^2$$ for block.'
-                };
-
-                const body = {
-                    model: 'openai/gpt-4o-mini',
-                    messages: [systemPrompt, ...this.aiConversationHistory],
-                    stream: true
-                };
-
-                let aiContent = '';
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
-                        'HTTP-Referer': 'https://study-buddy.app',
-                        'X-Title': 'Study Buddy'
-                    },
-                    body: JSON.stringify(body)
-                });
-
-                if (!response.ok) throw new Error('API Error');
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
-
-                    for (const line of lines) {
-                        const data = line.replace(/^data:\s*/, '');
-                        if (data === '[DONE]') break;
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed.choices?.[0]?.delta?.content) {
-                                aiContent += parsed.choices[0].delta.content;
-                                // Update message content in real-time
-                                this.updateAiMessage(aiMsgId, aiContent);
-                                this.scrollToAiBottom();
-                            }
-                        } catch (e) { }
+    mounted() {
+        onAuthStateChanged(auth, async (user) => {
+            if (this.authProcessed) return;
+            this.authProcessed = true;
+            if (user) {
+                this.currentUser = user;
+                this.profileData.displayName = user.displayName || '';
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.role && userData.role !== 'mentee' && userData.role !== 'student') {
+                        window.location.href = '/mentor/dashboard/';
+                        return;
                     }
                 }
-
-                // Final save to history
-                this.aiConversationHistory.push({ role: 'assistant', content: aiContent });
-                this.aiIsTyping = false;
-
-            } catch (error) {
-                console.error('AI Error:', error);
-                this.updateAiMessage(aiMsgId, 'Sorry, I encounted an error. Please try again.');
-                this.aiIsTyping = false;
+                this.initializeData();
+            } else {
+                window.location.href = '/';
+                return;
+            }
+            this.isLoading = false;
+        });
+        document.addEventListener('click', () => { this.dropdowns = {}; });
+        this.$watch('activeTab', (newTab) => {
+            if (newTab === 'whiteboard') {
+                this.$nextTick(() => { this.initCanvas(); });
+            }
+        });
+    },
+    methods: {
+        initializeData() {
+            this.loadAssignedMentors();
+            this.loadSessions();
+            this.loadPendingBookings();
+            this.loadChats();
+            this.loadAssignedQuizzes();
+            this.loadNotes();
+            this.loadSettings();
+            this.loadCallTranscripts();
+        },
+        loadCallTranscripts() {
+            const transcriptsRef = ref(rtdb, 'callTranscripts');
+            onValue(transcriptsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const userName = this.currentUser?.displayName || this.currentUser?.name || '';
+                    this.callTranscripts = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value, expanded: false }))
+                        .filter(ct => ct.menteeName === userName || ct.mentorName === userName)
+                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                } else {
+                    this.callTranscripts = [];
+                }
+            });
+        },
+        formatSessionInfo(ct) {
+            const d = new Date(ct.createdAt);
+            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const mins = Math.floor((ct.duration || 0) / 60);
+            const secs = (ct.duration || 0) % 60;
+            return dateStr + ' \u2022 ' + mins + 'm ' + secs + 's';
+        },
+        formatGrade(val) {
+            const map = { '9': 'Grade 9', '10': 'Grade 10', '11': 'Grade 11', '12': 'Grade 12', 'college': 'College' };
+            return map[val] || 'Select grade';
+        },
+        async logout() {
+            try {
+                await signOut(auth);
+                window.location.href = '/';
+            } catch (e) {
+                console.error("Error signing out:", e);
+                this.showToastNotification('Failed to sign out');
             }
         },
-        updateAiMessage(id, rawContent) {
-            // Process Markdown and Math
-            let htmlContent = this.renderMarkdown(rawContent);
-
-            // Find message and update
-            const index = this.aiMessages.findIndex(m => m.id === id);
-            if (index !== -1) {
-                this.aiMessages[index].content = htmlContent;
+        toggleDropdown(name) {
+            const isOpen = this.dropdowns[name];
+            this.dropdowns = {};
+            if (!isOpen) this.dropdowns[name] = true;
+        },
+        selectDropdown(dropdownName, value, objectName, key) {
+            this[objectName][key] = value;
+            this.dropdowns = {};
+        },
+        closeDropdowns() {
+            this.dropdowns = {};
+        },
+        formatDate(timestamp) {
+            if (!timestamp) return '';
+            return new Date(timestamp).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        },
+        formatMessageTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            if (date.toDateString() === now.toDateString()) {
+                return time;
             }
+            const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return `${day}, ${time}`;
+        },
+        formatSessionTime(time) {
+            if (!time) return '';
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        },
+        formatSessionDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (date.toDateString() === today.toDateString()) return 'Today';
+            if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        },
+        showToastNotification(message) {
+            this.toastMessage = message;
+            this.showToast = true;
+            setTimeout(() => { this.showToast = false; }, 3000);
+        },
+        showConfirm(title, message, callback, btnText = 'Delete') {
+            this.confirmTitle = title;
+            this.confirmMessage = message;
+            this.confirmBtnText = btnText;
+            this.confirmCallback = callback;
+            this.showConfirmModal = true;
+        },
+        confirmModalAction() {
+            this.showConfirmModal = false;
+            if (this.confirmCallback) this.confirmCallback();
+        },
+        getMentorInitials(mentor) {
+            const name = mentor.displayName || mentor.name || '';
+            const parts = name.split(' ');
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return name.substring(0, 2).toUpperCase() || 'MT';
+        },
+        async loadAssignedMentors() {
+            try {
+                const userEmail = this.currentUser.email?.toLowerCase().trim();
+                const assignmentsRef = collection(db, 'assignments');
+                const q = query(assignmentsRef, where('studentEmail', '==', userEmail));
+                onSnapshot(q, async (snapshot) => {
+                    if (snapshot.docs.length > 0) {
+                        const mentors = [];
+                        for (const docSnap of snapshot.docs) {
+                            const assignment = docSnap.data();
+                            const mentorDoc = await getDoc(doc(db, 'users', assignment.mentorId));
+                            if (mentorDoc.exists()) {
+                                mentors.push({ id: mentorDoc.id, ...mentorDoc.data() });
+                            } else {
+                                mentors.push({
+                                    id: assignment.mentorId,
+                                    displayName: assignment.mentorName,
+                                    email: assignment.mentorEmail,
+                                    subjects: ['General']
+                                });
+                            }
+                        }
+                        this.assignedMentors = mentors;
+                    } else {
+                        this.assignedMentors = [];
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading mentors:", e);
+                this.assignedMentors = [];
+            }
+        },
+        loadSessions() {
+            const sessionsRef = ref(rtdb, 'sessions');
+            onValue(sessionsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    this.sessions = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value }))
+                        .filter(session => session.studentId === this.currentUser.uid || session.participants?.includes(this.currentUser.uid));
+                } else {
+                    this.sessions = [];
+                }
+            });
+        },
+        loadPendingBookings() {
+            const bookingsRef = ref(rtdb, 'bookings');
+            onValue(bookingsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    this.pendingBookings = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value }))
+                        .filter(b => b.studentId === this.currentUser.uid && b.status === 'pending');
+                } else {
+                    this.pendingBookings = [];
+                }
+            });
+        },
+        async submitBooking() {
+            if (!this.bookingData.mentorId || !this.bookingData.subject || !this.bookingData.date || !this.bookingData.time) {
+                this.showToastNotification('Please fill in all required fields');
+                return;
+            }
+            const mentor = this.assignedMentors.find(m => m.id === this.bookingData.mentorId);
+            const bookingId = 'booking_' + Date.now();
+            try {
+                await set(ref(rtdb, `bookings/${bookingId}`), {
+                    studentId: this.currentUser.uid,
+                    studentName: this.currentUser.displayName || this.currentUser.name || 'Student',
+                    studentEmail: this.currentUser.email,
+                    mentorId: this.bookingData.mentorId,
+                    mentorName: mentor?.displayName || mentor?.name || 'Mentor',
+                    mentorEmail: mentor?.email,
+                    subject: this.bookingData.subject,
+                    date: this.bookingData.date,
+                    time: this.bookingData.time,
+                    duration: this.bookingData.duration,
+                    notes: this.bookingData.notes,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                this.showBookingModal = false;
+                this.bookingData = { mentorId: '', subject: '', date: '', time: '', duration: 60, notes: '' };
+                this.showToastNotification('Session request sent!');
+            } catch (e) {
+                console.error("Error submitting booking:", e);
+                this.showToastNotification('Failed to send request');
+            }
+        },
+        openBookingModal() {
+            this.bookingData = { mentorId: '', subject: '', date: '', time: '', duration: 60, notes: '' };
+            this.mentorAvailability = null;
+            this.showBookingModal = true;
+        },
+        async loadMentorAvailability() {
+            this.bookingData.date = '';
+            this.bookingData.time = '';
+            this.mentorAvailability = null;
+            if (!this.bookingData.mentorId) return;
+            try {
+                const settingsDoc = await getDoc(doc(db, 'settings', this.bookingData.mentorId));
+                if (settingsDoc.exists()) {
+                    this.mentorAvailability = settingsDoc.data().availability || null;
+                }
+            } catch (e) {
+                console.error('Error loading mentor availability:', e);
+            }
+            this.initBookingDatePicker();
+        },
+        initBookingDatePicker() {
+            this.$nextTick(() => {
+                if (this.datePicker) { this.datePicker.destroy(); this.datePicker = null; }
+                if (!this.$refs.bookingDatePicker) return;
+                const dayMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+                const disabledDays = [];
+                if (this.mentorAvailability) {
+                    for (const [day, config] of Object.entries(this.mentorAvailability)) {
+                        if (!config.enabled && dayMap[day] !== undefined) {
+                            disabledDays.push(dayMap[day]);
+                        }
+                    }
+                }
+                this.datePicker = flatpickr(this.$refs.bookingDatePicker, {
+                    dateFormat: 'Y-m-d',
+                    minDate: 'today',
+                    altInput: true,
+                    altFormat: 'F j, Y',
+                    disable: disabledDays.length > 0 ? [function (date) { return disabledDays.includes(date.getDay()); }] : [],
+                    onChange: (dates, dateStr) => {
+                        this.bookingData.date = dateStr;
+                        this.bookingData.time = '';
+                    }
+                });
+            });
+        },
+        viewMentorAvailability(mentor) {
+            this.bookingData = { mentorId: mentor.id, subject: '', date: '', time: '', duration: 60, notes: '' };
+            this.mentorAvailability = null;
+            this.showBookingModal = true;
+            this.loadMentorAvailability();
+        },
+        joinSession(session) {
+            const channel = `session_${session.id}`;
+            const menteeName = this.currentUser.displayName || this.currentUser.name || 'Student';
+            const mentorName = session.mentorName || '';
+            const params = new URLSearchParams({
+                channel,
+                mentor: mentorName,
+                mentee: menteeName,
+                role: 'mentee'
+            });
+            window.open(`/tools/call?${params.toString()}`, '_blank');
+        },
+        loadChats() {
+            const chatsRef = ref(rtdb, 'chats');
+            onValue(chatsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const userEmail = this.currentUser?.email;
+                    const userId = this.currentUser?.uid;
+                    this.chats = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value }))
+                        .filter(chat => {
+                            const byUid = chat.participants && chat.participants.includes(userId);
+                            const byEmail = chat.studentEmail === userEmail;
+                            return byUid || byEmail;
+                        })
+                        .sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                } else {
+                    this.chats = [];
+                }
+            });
+        },
+        selectChat(chat) {
+            this.activeChat = chat;
+            this.loadMessages(chat.id);
+        },
+        loadMessages(chatId) {
+            const messagesRef = rtdbQuery(ref(rtdb, `messages/${chatId}`), orderByChild('timestamp'));
+            onValue(messagesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    this.activeMessages = Object.entries(data).map(([key, value]) => ({
+                        id: key,
+                        ...value
+                    }));
+                    this.$nextTick(() => {
+                        const container = document.querySelector('.messages-area');
+                        if (container) container.scrollTop = container.scrollHeight;
+                    });
+                } else {
+                    this.activeMessages = [];
+                }
+            });
+        },
+        sendChatMessage() {
+            if (!this.newMessage.trim() || !this.activeChat) return;
+            const chatId = this.activeChat.id;
+            push(ref(rtdb, `messages/${chatId}`), {
+                text: this.newMessage,
+                senderId: this.currentUser.uid,
+                timestamp: serverTimestamp(),
+                read: false
+            });
+            update(ref(rtdb, `chats/${chatId}`), {
+                lastMessage: this.newMessage,
+                lastMessageTime: serverTimestamp()
+            });
+            this.newMessage = '';
+        },
+        startStrictChat(mentor) {
+            const mentorId = mentor.id;
+            const mentorEmail = mentor.email;
+            const existingChat = this.chats.find(c => {
+                const byUid = c.participants && c.participants.includes(mentorId);
+                const byEmail = c.mentorEmail === mentorEmail;
+                return byUid || byEmail;
+            });
+            if (existingChat) {
+                this.activeTab = 'messages';
+                this.selectChat(existingChat);
+            } else {
+                const chatId = 'chat_' + this.currentUser.uid + '_' + mentorId;
+                set(ref(rtdb, `chats/${chatId}`), {
+                    participants: [this.currentUser.uid, mentorId],
+                    mentorName: mentor.displayName || mentor.name,
+                    mentorEmail: mentor.email,
+                    studentName: this.currentUser.displayName || this.currentUser.name || 'Student',
+                    studentEmail: this.currentUser.email,
+                    lastMessage: 'Started a new conversation',
+                    lastMessageTime: serverTimestamp()
+                }).then(() => {
+                    this.activeTab = 'messages';
+                    setTimeout(() => {
+                        const newChat = this.chats.find(c => c.id === chatId);
+                        if (newChat) this.selectChat(newChat);
+                    }, 500);
+                });
+            }
+        },
+        startCall() {
+            if (!this.activeChat) {
+                this.showToastNotification('Please select a chat first');
+                return;
+            }
+            const channel = `chat_${this.activeChat.id}`;
+            const menteeName = this.currentUser.displayName || this.currentUser.name || 'Student';
+            const mentorName = this.activeChat.mentorName || '';
+            const params = new URLSearchParams({
+                channel,
+                mentor: mentorName,
+                mentee: menteeName,
+                role: 'mentee'
+            });
+            window.open(`/tools/call?${params.toString()}`, '_blank');
+        },
+        async initializeAgora(channelName) {
+            try {
+                this.agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                this.agoraClient.on("user-published", async (user, mediaType) => {
+                    await this.agoraClient.subscribe(user, mediaType);
+                    if (mediaType === "video") {
+                        this.remoteUser = user;
+                        user.videoTrack.play("remote-video");
+                    }
+                    if (mediaType === "audio") {
+                        user.audioTrack.play();
+                    }
+                });
+                this.agoraClient.on("user-unpublished", (user) => {
+                    if (this.remoteUser === user) this.remoteUser = null;
+                });
+                const uid = Math.floor(Math.random() * 10000);
+                const response = await fetch('/api/agora-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channelName, uid })
+                });
+                const data = await response.json();
+                if (!this.showVideoModal) return;
+                await this.agoraClient.join(data.appID, channelName, data.token, uid);
+                if (!this.showVideoModal) {
+                    this.agoraClient.leave();
+                    return;
+                }
+                [this.localAudioTrack, this.localVideoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+                this.localVideoTrack.play("local-video");
+                await this.agoraClient.publish([this.localAudioTrack, this.localVideoTrack]);
+            } catch (error) {
+                console.error("Agora Error:", error);
+                this.showToastNotification("Call failed: " + error.message);
+                this.endCall();
+            }
+        },
+        async endCall() {
+            try {
+                if (this.localAudioTrack) {
+                    this.localAudioTrack.stop();
+                    this.localAudioTrack.close();
+                    this.localAudioTrack = null;
+                }
+                if (this.localVideoTrack) {
+                    this.localVideoTrack.stop();
+                    this.localVideoTrack.close();
+                    this.localVideoTrack = null;
+                }
+                if (this.agoraClient) {
+                    await this.agoraClient.leave();
+                    this.agoraClient = null;
+                }
+            } catch (e) {
+                console.error("Error ending call:", e);
+            } finally {
+                this.showVideoModal = false;
+                this.remoteUser = null;
+                this.audioMuted = false;
+                this.videoMuted = false;
+            }
+        },
+        toggleAudio() {
+            if (this.localAudioTrack) {
+                this.audioMuted = !this.audioMuted;
+                this.localAudioTrack.setMuted(this.audioMuted);
+            }
+        },
+        toggleVideo() {
+            if (this.localVideoTrack) {
+                this.videoMuted = !this.videoMuted;
+                this.localVideoTrack.setMuted(this.videoMuted);
+            }
+        },
+        detectToolUsage(prompt) {
+            const lowerPrompt = prompt.toLowerCase();
+            if (/\b(book|schedule|request).*(session|meeting|call|tutoring)/i.test(prompt)) {
+                return { tool: 'Book Session', icon: 'ph-calendar-plus', agentic: true };
+            }
+            if (/\b(message|tell|send|notify).*(mentor|teacher|tutor)/i.test(prompt)) {
+                return { tool: 'Message Mentor', icon: 'ph-paper-plane-tilt', agentic: true };
+            }
+            if (/\b(quiz|test me|questions about|practice.*questions)/i.test(prompt)) {
+                return { tool: 'Quiz Generator', icon: 'ph-exam', agentic: true };
+            }
+            if (/\b(save|create|make).*(note|notes)/i.test(prompt)) {
+                return { tool: 'Create Note', icon: 'ph-notebook', agentic: true };
+            }
+            if (/\b(when|what|show|view).*(session|schedule|class|next)/i.test(prompt)) {
+                return { tool: 'View Schedule', icon: 'ph-calendar', agentic: false };
+            }
+            if (/\b(my mentor|who is my|about.*mentor)/i.test(prompt)) {
+                return { tool: 'Mentor Info', icon: 'ph-user', agentic: false };
+            }
+            return null;
+        },
+        async executeAgenticAction(tool, prompt) {
+            switch (tool) {
+                case 'Book Session': {
+                    if (this.assignedMentors.length === 0) {
+                        return { success: false, message: "You don't have any assigned mentors yet. Please contact admin for mentor assignment." };
+                    }
+                    const mentor = this.assignedMentors[0];
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const dateStr = tomorrow.toISOString().split('T')[0];
+                    const timeMatch = prompt.match(/(\d{1,2})\s*(am|pm|:)/i);
+                    let time = '16:00';
+                    if (timeMatch) {
+                        let hour = parseInt(timeMatch[1]);
+                        if (timeMatch[2].toLowerCase() === 'pm' && hour < 12) hour += 12;
+                        if (timeMatch[2].toLowerCase() === 'am' && hour === 12) hour = 0;
+                        time = `${hour.toString().padStart(2, '0')}:00`;
+                    }
+                    const subjectMatch = prompt.match(/(?:for|about|on)\s+(\w+(?:\s+\w+)?)/i);
+                    const subject = subjectMatch ? subjectMatch[1] : 'General Study Session';
+                    const bookingId = 'booking_' + Date.now();
+                    try {
+                        await set(ref(rtdb, `bookings/${bookingId}`), {
+                            studentId: this.currentUser.uid,
+                            studentName: this.currentUser.displayName || this.currentUser.name || 'Student',
+                            studentEmail: this.currentUser.email,
+                            mentorId: mentor.id,
+                            mentorName: mentor.displayName || mentor.name || 'Mentor',
+                            mentorEmail: mentor.email,
+                            subject: subject,
+                            date: dateStr,
+                            time: time,
+                            notes: `Booked via AI Assistant: "${prompt}"`,
+                            status: 'pending',
+                            createdAt: Date.now()
+                        });
+                        return {
+                            success: true,
+                            message: `I've sent a session request to **${mentor.displayName || mentor.name}** for **${subject}** on **${new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}** at **${this.formatSessionTime(time)}**.\n\nYour mentor will confirm the booking soon. You can check the status in the Schedule tab.`
+                        };
+                    } catch (e) {
+                        console.error("Booking error:", e);
+                        return { success: false, message: "Sorry, I couldn't create the booking. Please try again or use the Book Session button." };
+                    }
+                }
+                case 'Message Mentor': {
+                    if (this.assignedMentors.length === 0) {
+                        return { success: false, message: "You don't have any assigned mentors to message." };
+                    }
+                    const mentor = this.assignedMentors[0];
+                    const messageMatch = prompt.match(/(?:tell|message|send|notify).*(?:mentor|teacher|tutor)\s+(?:that\s+)?(.+)/i);
+                    const messageContent = messageMatch ? messageMatch[1] : prompt;
+                    const chatId = 'chat_' + this.currentUser.uid + '_' + mentor.id;
+                    try {
+                        const chatRef = ref(rtdb, `chats/${chatId}`);
+                        await update(chatRef, {
+                            participants: [this.currentUser.uid, mentor.id],
+                            mentorId: mentor.id,
+                            mentorName: mentor.displayName || mentor.name,
+                            mentorEmail: mentor.email,
+                            studentId: this.currentUser.uid,
+                            studentName: this.currentUser.displayName || this.currentUser.name || 'Student',
+                            studentEmail: this.currentUser.email,
+                            lastMessage: messageContent,
+                            lastMessageTime: serverTimestamp(),
+                            lastSenderId: this.currentUser.uid
+                        });
+                        await push(ref(rtdb, `messages/${chatId}`), {
+                            text: messageContent,
+                            senderId: this.currentUser.uid,
+                            senderName: this.currentUser.displayName || this.currentUser.name || 'Student',
+                            timestamp: serverTimestamp(),
+                            read: false
+                        });
+                        return {
+                            success: true,
+                            message: `I've sent your message to **${mentor.displayName || mentor.name}**:\n\n> "${messageContent}"\n\nYou can continue the conversation in the Messages tab.`
+                        };
+                    } catch (e) {
+                        console.error("Message error:", e);
+                        return { success: false, message: "Sorry, I couldn't send the message. Please try again." };
+                    }
+                }
+                case 'Create Note': {
+                    const titleMatch = prompt.match(/(?:note|notes)\s+(?:about|on|for)\s+(.+)/i);
+                    const title = titleMatch ? titleMatch[1].substring(0, 50) : 'AI Generated Note';
+                    const noteId = 'note_' + Date.now();
+                    try {
+                        await set(ref(rtdb, `notes/${this.currentUser.uid}/${noteId}`), {
+                            title: title,
+                            content: `Note created via AI Assistant.\n\nTopic: ${title}\n\nAdd your notes here...`,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now()
+                        });
+                        return {
+                            success: true,
+                            message: `I've created a new note titled "**${title}**". You can find it in the Study Notes tab to add more content.`
+                        };
+                    } catch (e) {
+                        console.error("Note creation error:", e);
+                        return { success: false, message: "Sorry, I couldn't create the note. Please try again." };
+                    }
+                }
+                case 'View Schedule': {
+                    const upcoming = this.allSessions.slice(0, 5);
+                    if (upcoming.length === 0) {
+                        return { success: true, message: "You don't have any upcoming sessions scheduled. Would you like me to help you book one?" };
+                    }
+                    let scheduleText = "Here are your upcoming sessions:\n\n";
+                    upcoming.forEach(s => {
+                        scheduleText += `- **${this.formatSessionDate(s.date)}** at **${this.formatSessionTime(s.startTime)}** - ${s.subject} with ${s.mentorName}\n`;
+                    });
+                    return { success: true, message: scheduleText };
+                }
+                case 'Mentor Info': {
+                    if (this.assignedMentors.length === 0) {
+                        return { success: true, message: "You don't have any assigned mentors yet. Please contact admin for mentor assignment." };
+                    }
+                    let mentorText = "Your assigned mentors:\n\n";
+                    this.assignedMentors.forEach(m => {
+                        mentorText += `- **${m.displayName || m.name}** - ${m.subjects?.join(', ') || m.subject || 'General'}\n`;
+                    });
+                    return { success: true, message: mentorText };
+                }
+                default:
+                    return { success: false, message: "I'm not sure how to help with that." };
+            }
+        },
+        async generateQuizInline(topic) {
+            const prompt = `Generate an EDUCATIONAL quiz with 5 mixed questions (multiple choice, fill in blank, true/false) about "${topic}".
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "title": "Quiz: ${topic}",
+  "questions": [
+    {"type": "mcq", "question": "Question text?", "options": ["A", "B", "C", "D"], "answer": "Correct option text", "explanation": "Brief explanation"},
+    {"type": "fill", "question": "The ____ is important.", "answer": "answer word", "explanation": "Brief explanation"},
+    {"type": "truefalse", "question": "Statement to evaluate", "answer": "True", "explanation": "Brief explanation"}
+  ]
+}`;
+            try {
+                const response = await fetch("/api/ai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        messages: [{ role: "user", content: prompt }],
+                        stream: false
+                    })
+                });
+                const data = await response.json();
+                let quizText = data.choices[0].message.content;
+                quizText = quizText.replace(/```json\n?|```/g, '').trim();
+                const quizData = JSON.parse(quizText);
+                return {
+                    title: quizData.title || `Quiz: ${topic}`,
+                    questions: quizData.questions.map(q => ({
+                        ...q,
+                        type: q.type || 'mcq',
+                        answered: false,
+                        correct: false,
+                        selected: null,
+                        userInput: ''
+                    }))
+                };
+            } catch (e) {
+                console.error("Quiz generation error:", e);
+                return null;
+            }
+        },
+        async sendAiMessage() {
+            if (!this.aiInput.trim()) return;
+            const input = this.aiInput;
+            const isImageRequest = /\b(generate|create|draw|make|show me|give me)\b.*(image|picture|photo|illustration|art|drawing|diagram|visual)/i.test(input);
+            const isQuizRequest = /\b(quiz|test me|questions about|practice.*questions)\b/i.test(input);
+            const userMsg = { role: 'user', content: input };
+            this.messages.push(userMsg);
+            this.isAiThinking = true;
+            this.aiInput = '';
+            const toolDetected = this.detectToolUsage(input);
+            if (toolDetected) {
+                this.currentToolUsed = toolDetected.tool;
+            }
+            if (isImageRequest) {
+                this.currentToolUsed = 'Image Generation';
+            }
+            const aiMsg = { role: 'assistant', content: '', image: null, quiz: null };
+            this.messages.push(aiMsg);
+            const msgIndex = this.messages.length - 1;
+            try {
+                if (toolDetected && toolDetected.agentic && toolDetected.tool !== 'Quiz Generator') {
+                    const result = await this.executeAgenticAction(toolDetected.tool, input);
+                    this.messages[msgIndex].content = result.message;
+                    this.messages[msgIndex].actionTaken = result.success;
+                } else if (isQuizRequest) {
+                    const topicMatch = input.match(/(?:quiz|test me|questions about|practice.*questions)\s*(?:on|about|for)?\s*(.+)/i);
+                    const topic = topicMatch ? topicMatch[1].trim() : 'General Knowledge';
+                    this.messages[msgIndex].content = `Generating a quiz on **${topic}**...`;
+                    const quiz = await this.generateQuizInline(topic);
+                    if (quiz) {
+                        this.messages[msgIndex].content = `Here's your quiz on **${topic}**! Answer the questions below:`;
+                        this.messages[msgIndex].quiz = quiz;
+                        this.activeQuiz = quiz;
+                        this.aiSidebarTab = 'quizzes';
+                    } else {
+                        this.messages[msgIndex].content = `I had trouble generating a quiz on "${topic}". Let me help you study instead:\n\n**${topic}** is an interesting subject! What specific aspect would you like to learn about?`;
+                    }
+                } else if (isImageRequest) {
+                    const systemPrompt = 'You are an AI that generates educational images. Create the image as requested. Only generate educational, family-friendly content.';
+                    const apiMessages = [
+                        { role: 'system', content: systemPrompt },
+                        ...this.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+                    ];
+                    const response = await fetch('/api/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            generateImage: true,
+                            stream: false,
+                            messages: apiMessages
+                        })
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    const content = data.choices?.[0]?.message?.content || '';
+                    let imageUrl = null;
+                    if (data.choices?.[0]?.message?.images?.length > 0) {
+                        imageUrl = data.choices[0].message.images[0].image_url?.url || data.choices[0].message.images[0].url;
+                    }
+                    const base64Match = content.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
+                    if (base64Match) {
+                        imageUrl = base64Match[0];
+                    }
+                    this.messages[msgIndex].content = content.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/, '').trim() || 'Here is the generated image:';
+                    this.messages[msgIndex].image = imageUrl;
+                } else {
+                    const scheduleContext = this.allSessions.slice(0, 3).map(s => `- ${this.formatSessionDate(s.date)} at ${this.formatSessionTime(s.startTime)}: ${s.subject} with ${s.mentorName}`).join('\n');
+                    const mentorNames = this.assignedMentors.map(m => m.displayName || m.name).join(', ');
+                    const systemPrompt = `You are a helpful AI study assistant for students in India. 
+**Student's Context:**
+- Mentors: ${mentorNames || 'No mentors assigned'}
+- Upcoming Sessions: ${scheduleContext || 'None scheduled'}
+
+**Your Capabilities:**
+- Explain concepts clearly with examples
+- Help create study plans
+- Generate practice questions inline
+- Answer homework questions
+- Summarize topics
+
+**Rules:**
+- Use markdown formatting
+- Use LaTeX for math ($...$ inline, $$...$$ block)
+- Do NOT use emojis
+- Be encouraging and supportive
+- Use INR (₹) for currency`;
+                    const apiMessages = [
+                        { role: 'system', content: systemPrompt },
+                        ...this.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+                    ];
+                    const response = await fetch('/api/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            stream: true,
+                            messages: apiMessages
+                        })
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') continue;
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    const delta = parsed.choices?.[0]?.delta?.content;
+                                    if (delta) {
+                                        this.messages[msgIndex].content += delta;
+                                        this.$nextTick(() => {
+                                            const win = this.$refs.chatWindow;
+                                            if (win) win.scrollTop = win.scrollHeight;
+                                        });
+                                    }
+                                } catch (e) { }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                this.messages[msgIndex].content = 'Sorry, I am having trouble connecting. Please try again.';
+            } finally {
+                this.isAiThinking = false;
+                this.currentToolUsed = null;
+                this.$nextTick(() => {
+                    const win = this.$refs.chatWindow;
+                    if (win) win.scrollTop = win.scrollHeight;
+                });
+            }
+        },
+        startNewChat() {
+            if (this.messages.length > 0) {
+                const title = this.messages[0]?.content?.substring(0, 30) + '...' || 'Chat';
+                this.chatHistory.unshift({
+                    id: Date.now(),
+                    title: title,
+                    messages: [...this.messages]
+                });
+            }
+            this.messages = [];
+        },
+        loadChat(chat) {
+            this.messages = chat.messages || [];
         },
         renderMarkdown(text) {
-            // 1. Math Rendering (Pre-process)
-            // Replace block math $$...$$
-            let processed = text.replace(/\$\$([\s\S]+?)\$\$/g, (match, expr) => {
-                try { return katex.renderToString(expr, { displayMode: true }); }
-                catch (e) { return match; }
-            });
-
-            // Replace inline math $...$
-            processed = processed.replace(/\$([^\$\n]+?)\$/g, (match, expr) => {
-                try { return katex.renderToString(expr, { displayMode: false }); }
-                catch (e) { return match; }
-            });
-
-            // 2. Markdown Rendering
-            return marked.parse(processed);
-        },
-        scrollToAiBottom() {
-            this.$nextTick(() => {
-                const el = document.querySelector('.ai-messages-scroll');
-                if (el) el.scrollTop = el.scrollHeight;
-            });
-        },
-        joinMeeting() {
-            const callId = 'chemistry-session-' + Date.now();
-            window.location.href = `/tools/meeting?room=${callId}&name=Rahul Kumar`;
-        },
-        changeMonth(direction) {
-            this.currentMonthIndex += direction;
-            if (this.currentMonthIndex < 0) {
-                this.currentMonthIndex = 11;
-                this.currentYear--;
-            } else if (this.currentMonthIndex > 11) {
-                this.currentMonthIndex = 0;
-                this.currentYear++;
+            if (!text) return '';
+            let processed = text;
+            const latexBlocks = [];
+            if (typeof katex !== 'undefined') {
+                processed = processed.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+                    try {
+                        const rendered = katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+                        const placeholder = `%%LATEX_BLOCK_${latexBlocks.length}%%`;
+                        latexBlocks.push(rendered);
+                        return placeholder;
+                    } catch (e) { return match; }
+                });
+                processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (match, math) => {
+                    try {
+                        const rendered = katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+                        const placeholder = `%%LATEX_BLOCK_${latexBlocks.length}%%`;
+                        latexBlocks.push(rendered);
+                        return placeholder;
+                    } catch (e) { return match; }
+                });
+                processed = processed.replace(/\$([^\$\n]+?)\$/g, (match, math) => {
+                    try {
+                        const rendered = katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                        const placeholder = `%%LATEX_INLINE_${latexBlocks.length}%%`;
+                        latexBlocks.push(rendered);
+                        return placeholder;
+                    } catch (e) { return match; }
+                });
+                processed = processed.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+                    try {
+                        const rendered = katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                        const placeholder = `%%LATEX_INLINE_${latexBlocks.length}%%`;
+                        latexBlocks.push(rendered);
+                        return placeholder;
+                    } catch (e) { return match; }
+                });
             }
+            let html = typeof marked !== 'undefined' ? marked.parse(processed) : processed;
+            latexBlocks.forEach((rendered, i) => {
+                html = html.replace(`%%LATEX_BLOCK_${i}%%`, rendered);
+                html = html.replace(`%%LATEX_INLINE_${i}%%`, rendered);
+            });
+            html = html.replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+            return html;
         },
-        async sendMessage() {
-            if (this.chatInput.trim()) {
-                this.chatMessages.push({
-                    id: Date.now(),
-                    sender: 'user',
-                    content: this.chatInput
-                });
-
-                const userMessage = this.chatInput;
-                this.chatInput = '';
-
-                this.$nextTick(() => {
-                    this.scrollToBottom();
-                });
-
-                // Simulate AI Typing
-                this.isAiTyping = true;
-                this.scrollToBottom();
-
-                /* Simulate network delay */
+        loadAssignedQuizzes() {
+            const quizzesRef = ref(rtdb, 'assignedQuizzes');
+            onValue(quizzesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    this.assignedQuizzes = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value }))
+                        .filter(q => q.studentId === this.currentUser.uid && !q.completed);
+                } else {
+                    this.assignedQuizzes = [];
+                }
+            });
+        },
+        startAssignedQuiz(quiz) {
+            const questions = typeof quiz.questions === 'string' ? JSON.parse(quiz.questions) : quiz.questions;
+            this.activeQuiz = {
+                ...quiz,
+                questions: questions.map(q => ({ ...q, type: q.type || 'mcq', answered: false, correct: false, selected: null, userInput: '' }))
+            };
+            this.activeTab = 'ai';
+            this.aiSidebarTab = 'quizzes';
+        },
+        loadSavedQuiz(quiz) {
+            this.activeQuiz = quiz;
+        },
+        answerQuestion(idx, answer) {
+            const q = this.activeQuiz.questions[idx];
+            if (!answer || q.answered) return;
+            q.selected = answer;
+            q.answered = true;
+            const userAnswer = String(answer).toLowerCase().trim();
+            const correctAnswer = String(q.answer).toLowerCase().trim();
+            q.correct = userAnswer === correctAnswer;
+        },
+        getOptionStyle(q, opt) {
+            if (!q.answered) return { background: 'white', border: '1px solid #e5e7eb' };
+            const optLower = String(opt).toLowerCase().trim();
+            const answerLower = String(q.answer).toLowerCase().trim();
+            const selectedLower = String(q.selected).toLowerCase().trim();
+            if (optLower === answerLower) return { background: '#dcfce7', border: '2px solid #22c55e', color: '#15803d' };
+            if (optLower === selectedLower && !q.correct) return { background: '#fee2e2', border: '2px solid #ef4444', color: '#b91c1c' };
+            return { background: '#f5f5f5', border: '1px solid #e5e7eb', color: '#9ca3af' };
+        },
+        async finishQuiz() {
+            if (this.activeQuiz && this.activeQuiz.id) {
+                const answered = this.activeQuiz.questions.filter(q => q.answered).length;
+                const correct = this.activeQuiz.questions.filter(q => q.correct).length;
+                try {
+                    await update(ref(rtdb, `assignedQuizzes/${this.activeQuiz.id}`), {
+                        completed: true,
+                        completedAt: serverTimestamp(),
+                        score: correct,
+                        total: this.activeQuiz.questions.length
+                    });
+                    this.showToastNotification(`Quiz completed! Score: ${correct}/${this.activeQuiz.questions.length}`);
+                } catch (e) {
+                    console.error("Error saving quiz result:", e);
+                }
+            }
+            this.activeQuiz = null;
+        },
+        async sendQuizMessage() {
+            if (!this.quizInput.trim()) return;
+            const userInput = this.quizInput.trim();
+            this.quizMessages.push({ role: 'user', content: userInput });
+            this.quizInput = '';
+            if (this.quizStep === 'topic') {
+                this.quizTopic = userInput;
+                this.quizStep = 'type';
                 setTimeout(() => {
-                    this.isAiTyping = false;
-                    const aiResponse = this.generateAIResponse(userMessage); // Use the simple generator for demo
-
-                    this.chatMessages.push({
-                        id: Date.now() + 1,
-                        sender: 'ai',
-                        content: aiResponse
+                    this.quizMessages.push({
+                        role: 'assistant',
+                        content: `Great! I'll create a quiz on <strong>${userInput}</strong>. What type of questions would you like?`,
+                        buttons: ['Multiple Choice', 'Fill in Blanks', 'True/False', 'Mixed']
                     });
-
-                    this.$nextTick(() => {
-                        this.scrollToBottom();
-                    });
-                }, 1500);
-            }
-        },
-        askQuickQuestion(event) {
-            const question = event.target.textContent;
-            this.chatInput = question;
-            this.sendMessage();
-        },
-        generateAIResponse(question) {
-            const responses = [
-                "Great question! Let me break that down for you step by step...",
-                "I'd be happy to help with that! Here's what you need to know...",
-                "That's a common topic students ask about. Here's a clear explanation...",
-                "Let me help you understand this concept better...",
-                "Good thinking! Here's how to approach this problem..."
-            ];
-            return responses[Math.floor(Math.random() * responses.length)];
-        },
-        scrollToBottom() {
-            this.$nextTick(() => {
-                const messagesContainer = this.$refs.chatMessages;
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
-            });
-        },
-        getSubjectIcon(subjectName) {
-            const iconMap = {
-                'chemistry': 'ph-bold ph-flask',
-                'mathematics': 'ph-bold ph-math-operations',
-                'english': 'ph-bold ph-book-open',
-                'physics': 'ph-bold ph-atom',
-                'biology': 'ph-bold ph-dna',
-                'history': 'ph-bold ph-clock-clockwise',
-                'geography': 'ph-bold ph-globe'
-            };
-            return iconMap[subjectName.toLowerCase()] || 'ph-bold ph-book';
-        },
-        getCoachesForSubject(subject) {
-            return this.availableCoaches[subject] || [];
-        },
-        submitSchedule() {
-            if (!this.scheduleForm.subject || !this.scheduleForm.coach || !this.scheduleForm.date || !this.scheduleForm.time) {
-                alert('Please fill in all fields');
-                return;
-            }
-
-            this.bookingDetails = {
-                subject: this.scheduleForm.subject.charAt(0).toUpperCase() + this.scheduleForm.subject.slice(1),
-                coach: this.scheduleForm.coach,
-                date: this.scheduleForm.date,
-                time: this.scheduleForm.time
-            };
-
-            this.showBookingConfirmation = true;
-
-            this.scheduleForm = { subject: '', coach: '', date: '', time: '', reason: '' };
-            if (this.flatpickrInstance) {
-                this.flatpickrInstance.clear();
-            }
-        },
-        initFlatpickr() {
-            this.$nextTick(() => {
-                const datepicker = document.getElementById('datepicker');
-                if (datepicker && !this.flatpickrInstance) {
-                    this.flatpickrInstance = flatpickr(datepicker, {
-                        minDate: 'today',
-                        dateFormat: 'F j, Y',
-                        onChange: (selectedDates, dateStr) => {
-                            this.scheduleForm.date = dateStr;
-                        }
-                    });
-                }
-            });
-        },
-        submitQuestion() {
-            if (!this.newQuestion.subject || !this.newQuestion.title || !this.newQuestion.body) {
-                alert('Please fill in all fields');
-                return;
-            }
-            this.communityQuestions.unshift({
-                id: Date.now(),
-                subject: this.newQuestion.subject,
-                title: this.newQuestion.title,
-                body: this.newQuestion.body,
-                userName: 'Rahul Kumar',
-                userInitials: 'RK',
-                time: 'Just now',
-                answers: 0,
-                upvotes: 0
-            });
-            this.newQuestion = { subject: '', title: '', body: '' };
-            this.showAskQuestionModal = false;
-        },
-        selectMentor(mentor) {
-            this.selectedMentor = mentor;
-
-            const mentorConversations = {
-                1: [
-                    { id: 1, sender: 'mentor', content: 'Hi Rahul! Ready for today\'s organic chemistry session?', time: '9:15 AM' },
-                    { id: 2, sender: 'user', content: 'Yes! I have some questions about functional groups', time: '9:18 AM' },
-                    { id: 3, sender: 'mentor', content: 'Perfect! Functional groups are super important. Which ones are you finding tricky?', time: '9:19 AM' },
-                    { id: 4, sender: 'user', content: 'I\'m confused between aldehydes and ketones', time: '9:21 AM' },
-                    { id: 5, sender: 'mentor', content: 'Great question! Both have the carbonyl group (C=O), but aldehydes have it at the end of the chain, while ketones have it in the middle. The key difference is the position!', time: '9:23 AM' },
-                    { id: 6, sender: 'user', content: 'That makes sense! Thanks for clarifying', time: '9:25 AM' },
-                    { id: 7, sender: 'mentor', content: 'Great work on the assignment! You\'re really improving', time: 'Yesterday' }
-                ],
-                2: [
-                    { id: 1, sender: 'mentor', content: 'Hey Rahul! How\'s the calculus practice going?', time: '2:30 PM' },
-                    { id: 2, sender: 'user', content: 'Pretty good! But I\'m stuck on integration by parts', time: '2:35 PM' },
-                    { id: 3, sender: 'mentor', content: 'No worries! Remember the formula: ∫u dv = uv - ∫v du. The trick is choosing the right u and dv.', time: '2:37 PM' },
-                    { id: 4, sender: 'user', content: 'How do I know which to choose as u?', time: '2:40 PM' },
-                    { id: 5, sender: 'mentor', content: 'Use the LIATE rule: Logarithmic, Inverse trig, Algebraic, Trig, Exponential. Choose u in that priority order!', time: '2:42 PM' },
-                    { id: 6, sender: 'user', content: 'Oh that\'s helpful! Let me try some problems', time: '2:45 PM' },
-                    { id: 7, sender: 'mentor', content: 'Sounds good! Message me if you get stuck', time: '2:46 PM' }
-                ],
-                3: [
-                    { id: 1, sender: 'mentor', content: 'Hi Rahul! I reviewed your essay draft', time: '11:00 AM' },
-                    { id: 2, sender: 'user', content: 'How did it look? Any feedback?', time: '11:05 AM' },
-                    { id: 3, sender: 'mentor', content: 'Your thesis is strong and your arguments are well-structured! I\'d suggest adding more evidence in paragraph 3.', time: '11:07 AM' },
-                    { id: 4, sender: 'user', content: 'Should I add more quotes or statistics?', time: '11:10 AM' },
-                    { id: 5, sender: 'mentor', content: 'Both would work well! Statistics add credibility, and quotes can provide different perspectives. Try to balance them.', time: '11:12 AM' },
-                    { id: 6, sender: 'user', content: 'Got it! I\'ll work on the revisions tonight', time: '11:15 AM' },
-                    { id: 7, sender: 'mentor', content: 'Perfect! Send it over when you\'re done and I\'ll do another review', time: '11:16 AM' },
-                    { id: 8, sender: 'mentor', content: 'Also, don\'t forget about the conclusion - make it impactful!', time: '11:17 AM' }
-                ]
-            };
-
-            this.mentorMessages = mentorConversations[mentor.id] || [
-                { id: 1, sender: 'mentor', content: 'Hi Rahul! How can I help you today?', time: '10:30 AM' }
-            ];
-        },
-        sendMentorMessage() {
-            if (this.mentorChatInput.trim() && this.selectedMentor) {
-                this.mentorMessages.push({
-                    id: Date.now(),
-                    sender: 'user',
-                    content: this.mentorChatInput,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-                this.mentorChatInput = '';
-                this.$nextTick(() => {
-                    const container = this.$refs.mentorMessages;
-                    if (container) container.scrollTop = container.scrollHeight;
+                }, 500);
+            } else if (this.quizStep === 'generating') {
+                this.quizMessages.push({
+                    role: 'assistant',
+                    content: 'Please wait while I generate your quiz...'
                 });
             }
+        },
+        async handleQuizButton(btn) {
+            this.quizMessages.push({ role: 'user', content: btn });
+            if (this.quizStep === 'type') {
+                this.quizStep = 'difficulty';
+                setTimeout(() => {
+                    this.quizMessages.push({
+                        role: 'assistant',
+                        content: 'How difficult should the quiz be?',
+                        buttons: ['Easy', 'Medium', 'Hard']
+                    });
+                }, 400);
+            } else if (this.quizStep === 'difficulty') {
+                this.quizStep = 'generating';
+                this.isGeneratingQuiz = true;
+                this.quizMessages.push({
+                    role: 'assistant',
+                    content: `Generating your ${btn.toLowerCase()} quiz on <strong>${this.quizTopic}</strong>...`
+                });
+                const typeMap = {
+                    'Multiple Choice': 'mcq',
+                    'Fill in Blanks': 'fill',
+                    'True/False': 'truefalse',
+                    'Mixed': 'mixed'
+                };
+                const quiz = await this.generateQuizFromConversation(btn.toLowerCase());
+                this.isGeneratingQuiz = false;
+                if (quiz) {
+                    this.activeQuiz = quiz;
+                    this.quizMessages.push({
+                        role: 'assistant',
+                        content: `Your quiz is ready! <strong>${quiz.title}</strong> with ${quiz.questions.length} questions. Good luck!`
+                    });
+                } else {
+                    this.quizMessages.push({
+                        role: 'assistant',
+                        content: 'Sorry, I had trouble generating the quiz. Would you like to try another topic?',
+                        buttons: ['Try Again', 'New Topic']
+                    });
+                }
+                this.quizStep = 'topic';
+            } else if (btn === 'Try Again') {
+                this.quizStep = 'type';
+                this.quizMessages.push({
+                    role: 'assistant',
+                    content: `Let's try again with <strong>${this.quizTopic}</strong>. What type of questions?`,
+                    buttons: ['Multiple Choice', 'Fill in Blanks', 'True/False', 'Mixed']
+                });
+            } else if (btn === 'New Topic') {
+                this.quizStep = 'topic';
+                this.quizTopic = '';
+                this.quizMessages.push({
+                    role: 'assistant',
+                    content: 'Sure! What topic would you like to be quizzed on?'
+                });
+            }
+        },
+        async generateQuizFromConversation(difficulty = 'medium') {
+            const typeMsg = this.quizMessages.find(m => m.role === 'user' && ['Multiple Choice', 'Fill in Blanks', 'True/False', 'Mixed'].includes(m.content));
+            const quizType = typeMsg?.content || 'Mixed';
+            const typePrompt = {
+                'Multiple Choice': 'multiple choice questions with 4 options',
+                'Fill in Blanks': 'fill in the blank questions',
+                'True/False': 'true or false questions',
+                'Mixed': 'a mix of multiple choice, fill in blank, and true/false questions'
+            }[quizType];
+            const prompt = `Generate an EDUCATIONAL quiz with 5 ${typePrompt} about "${this.quizTopic}".
+Difficulty level: ${difficulty}
+Return ONLY valid JSON (no markdown):
+{
+  "title": "Quiz: ${this.quizTopic}",
+  "questions": [
+    {"type": "mcq", "question": "Question?", "options": ["A", "B", "C", "D"], "answer": "Correct", "explanation": "Brief explanation"},
+    {"type": "fill", "question": "The ____ is important.", "answer": "answer", "explanation": "Brief explanation"},
+    {"type": "truefalse", "question": "Statement", "answer": "True", "explanation": "Brief explanation"}
+  ]
+}`;
+            try {
+                const response = await fetch("/api/ai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        messages: [{ role: "user", content: prompt }],
+                        stream: false
+                    })
+                });
+                const data = await response.json();
+                let quizText = data.choices[0].message.content;
+                quizText = quizText.replace(/```json\n?|```/g, '').trim();
+                const quizData = JSON.parse(quizText);
+                return {
+                    title: quizData.title || `Quiz: ${this.quizTopic}`,
+                    questions: quizData.questions.map(q => ({
+                        ...q,
+                        type: q.type || 'mcq',
+                        answered: false,
+                        correct: false,
+                        selected: null,
+                        userInput: ''
+                    }))
+                };
+            } catch (e) {
+                console.error("Quiz generation error:", e);
+                return null;
+            }
+        },
+        loadNotes() {
+            const notesRef = ref(rtdb, `notes/${this.currentUser.uid}`);
+            onValue(notesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    this.notes = Object.entries(data)
+                        .map(([key, value]) => ({ id: key, ...value }))
+                        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                } else {
+                    this.notes = [];
+                }
+            });
         },
         createNewNote() {
+            const noteId = 'note_' + Date.now();
             const newNote = {
-                id: Date.now(),
-                title: 'Untitled Note',
+                title: 'Untitled',
                 content: '',
-                preview: '',
-                subject: 'General',
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                createdAt: Date.now(),
+                updatedAt: Date.now()
             };
-            this.notes.unshift(newNote);
-            this.selectedNote = newNote;
+            set(ref(rtdb, `notes/${this.currentUser.uid}/${noteId}`), newNote);
+            this.activeNote = { id: noteId, ...newNote };
+            this.noteTitle = newNote.title;
+            this.noteContent = '';
             this.$nextTick(() => {
-                if (this.$refs.notesEditor) {
-                    this.$refs.notesEditor.innerHTML = '';
+                const editor = this.$refs.noteEditor;
+                if (editor) {
+                    editor.innerHTML = '';
+                    editor.focus();
                 }
             });
         },
         selectNote(note) {
-            this.selectedNote = note;
+            this.activeNote = note;
+            this.noteTitle = note.title;
+            this.noteContent = note.content || '';
             this.$nextTick(() => {
-                if (this.$refs.notesEditor) {
-                    this.$refs.notesEditor.innerHTML = note.content || '';
+                const editor = this.$refs.noteEditor;
+                if (editor) {
+                    if (this.noteContent && typeof marked !== 'undefined' && !this.noteContent.startsWith('<')) {
+                        editor.innerHTML = marked.parse(this.noteContent);
+                    } else {
+                        editor.innerHTML = this.noteContent || '';
+                    }
                 }
             });
         },
-        updateNoteContent() {
-            if (this.selectedNote && this.$refs.notesEditor) {
-                this.selectedNote.content = this.$refs.notesEditor.innerHTML;
-                const text = this.$refs.notesEditor.innerText || '';
-                this.selectedNote.preview = text.substring(0, 50);
-            }
+        handleNoteInput() {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            this.noteContent = editor.innerHTML;
+            this.checkBlockShortcuts();
+            this.autoSaveNote();
         },
-        updateNotePreview() {
-            if (this.selectedNote) {
-                const text = this.$refs.notesEditor?.innerText || '';
-                this.selectedNote.preview = text.substring(0, 50);
+        handleNoteKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                const sel = window.getSelection();
+                if (!sel.rangeCount) return;
+                const node = sel.anchorNode;
+                const block = node.nodeType === 3 ? node.parentElement : node;
+                if (block && (block.tagName === 'LI' || block.closest('li'))) return;
+                if (block && block.closest('pre')) {
+                    e.preventDefault();
+                    document.execCommand('insertText', false, '\n');
+                    return;
+                }
             }
-        },
-        formatText(command) {
-            document.execCommand(command, false, null);
-            this.$refs.notesEditor?.focus();
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                document.execCommand('insertText', false, '    ');
+            }
         },
         handleNotePaste(e) {
             e.preventDefault();
             const text = e.clipboardData.getData('text/plain');
             document.execCommand('insertText', false, text);
         },
-        acceptSuggestion() {
-            if (this.selectedNote && this.aiNoteSuggestion) {
-                const editor = this.$refs.notesEditor;
-                if (editor) {
-                    const suggestionHTML = `<div style="background: #EDF5FF; padding: 12px; border-radius: 8px; border-left: 3px solid #6a9ff5; margin: 16px 0;"><strong>✨ AI Summary:</strong><br>${this.aiNoteSuggestion.suggestion}</div>`;
-                    editor.innerHTML += suggestionHTML;
-                    this.updateNoteContent();
-                }
-                this.aiNoteSuggestion.dismissed = true;
-            }
-        },
-        rejectSuggestion() {
-            this.aiNoteSuggestion.dismissed = true;
-        },
-        selectWbTool(tool) {
-            this.wbTool = tool;
-        },
-        clearWhiteboard() {
-            if (this.whiteboardContext) {
-                const canvas = this.$refs.whiteboardCanvas;
-                this.whiteboardContext.clearRect(0, 0, canvas.width, canvas.height);
-                this.wbHistory = [];
-            }
-        },
-        undoWhiteboard() {
-            if (this.wbHistory.length > 0) {
-                this.wbHistory.pop();
-                const canvas = this.$refs.whiteboardCanvas;
-                this.whiteboardContext.clearRect(0, 0, canvas.width, canvas.height);
-                this.wbHistory.forEach(imgData => {
-                    this.whiteboardContext.putImageData(imgData, 0, 0);
-                });
-            }
-        },
-        saveWhiteboardState() {
-            if (this.whiteboardContext) {
-                const canvas = this.$refs.whiteboardCanvas;
-                const imgData = this.whiteboardContext.getImageData(0, 0, canvas.width, canvas.height);
-                this.wbHistory.push(imgData);
-                if (this.wbHistory.length > 20) {
-                    this.wbHistory.shift();
-                }
-            }
-        },
-        initWhiteboard() {
-            const canvas = this.$refs.whiteboardCanvas;
-            if (canvas) {
-                canvas.width = canvas.offsetWidth || 800;
-                canvas.height = canvas.offsetHeight || 600;
-                this.whiteboardContext = canvas.getContext('2d');
-                this.whiteboardContext.lineCap = 'round';
-                this.whiteboardContext.lineJoin = 'round';
-
-                if (!canvas.dataset.listenersAdded) {
-                    let lastX = 0, lastY = 0;
-
-                    canvas.addEventListener('mousedown', (e) => {
-                        this.isDrawing = true;
-                        const rect = canvas.getBoundingClientRect();
-                        lastX = e.clientX - rect.left;
-                        lastY = e.clientY - rect.top;
-                        this.whiteboardContext.beginPath();
-                        this.whiteboardContext.moveTo(lastX, lastY);
-                    });
-
-                    canvas.addEventListener('mousemove', (e) => {
-                        if (this.isDrawing) {
-                            const rect = canvas.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const y = e.clientY - rect.top;
-
-                            if (this.wbTool === 'eraser') {
-                                this.whiteboardContext.globalCompositeOperation = 'destination-out';
-                                this.whiteboardContext.lineWidth = 20;
-                            } else {
-                                this.whiteboardContext.globalCompositeOperation = 'source-over';
-                                this.whiteboardContext.lineWidth = this.wbPenSize;
-
-                                if (this.wbTool === 'highlighter') {
-                                    this.whiteboardContext.globalAlpha = 0.3;
-                                    this.whiteboardContext.lineWidth = this.wbPenSize * 3;
-                                } else {
-                                    this.whiteboardContext.globalAlpha = 1;
-                                }
-
-                                this.whiteboardContext.strokeStyle = this.wbColor;
-                            }
-
-                            this.whiteboardContext.lineTo(x, y);
-                            this.whiteboardContext.stroke();
-                            this.whiteboardContext.beginPath();
-                            this.whiteboardContext.moveTo(x, y);
-
-                            lastX = x;
-                            lastY = y;
+        checkBlockShortcuts() {
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            const node = sel.anchorNode;
+            if (!node || node.nodeType !== 3) return;
+            const text = node.textContent;
+            const blockMap = {
+                '# ': 'h1', '## ': 'h2', '### ': 'h3',
+                '> ': 'blockquote', '- ': 'ul', '* ': 'ul',
+                '1. ': 'ol'
+            };
+            for (const [prefix, tag] of Object.entries(blockMap)) {
+                if (text.startsWith(prefix)) {
+                    const remaining = text.slice(prefix.length);
+                    const block = node.parentElement;
+                    if (tag === 'ul' || tag === 'ol') {
+                        node.textContent = remaining;
+                        document.execCommand('insertUnorderedList');
+                        if (tag === 'ol') {
+                            document.execCommand('insertUnorderedList');
+                            document.execCommand('insertOrderedList');
                         }
-                    });
-
-                    canvas.addEventListener('mouseup', () => {
-                        if (this.isDrawing) {
-                            this.isDrawing = false;
-                            this.saveWhiteboardState();
+                    } else if (tag === 'blockquote') {
+                        node.textContent = remaining;
+                        const bq = document.createElement('blockquote');
+                        const p = document.createElement('p');
+                        p.textContent = remaining;
+                        bq.appendChild(p);
+                        if (block.tagName === 'DIV' || block.tagName === 'P') {
+                            block.replaceWith(bq);
+                        } else {
+                            const parent = node.parentElement;
+                            parent.textContent = '';
+                            parent.appendChild(bq);
                         }
-                    });
-
-                    canvas.addEventListener('mouseleave', () => {
-                        if (this.isDrawing) {
-                            this.isDrawing = false;
-                            this.saveWhiteboardState();
+                        const range = document.createRange();
+                        range.selectNodeContents(p);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    } else {
+                        const heading = document.createElement(tag);
+                        heading.textContent = remaining;
+                        if (block && block !== this.$refs.noteEditor) {
+                            block.replaceWith(heading);
+                        } else {
+                            node.textContent = '';
+                            node.parentElement.appendChild(heading);
                         }
-                    });
-
-                    canvas.dataset.listenersAdded = 'true';
+                        const range = document.createRange();
+                        range.selectNodeContents(heading);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                    this.noteContent = this.$refs.noteEditor.innerHTML;
+                    return;
                 }
             }
-        }
-    },
-    watch: {
-        activeTab(newTab) {
-            if (newTab === 'whiteboard') {
-                this.$nextTick(() => {
-                    this.initWhiteboard();
-                });
-            }
-            if (newTab === 'schedule') {
-                this.initFlatpickr();
+            if (text === '---' || text === '***') {
+                const block = node.parentElement;
+                const hr = document.createElement('hr');
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                if (block && block !== this.$refs.noteEditor) {
+                    block.replaceWith(hr);
+                    hr.after(p);
+                }
+                const range = document.createRange();
+                range.selectNodeContents(p);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                this.noteContent = this.$refs.noteEditor.innerHTML;
             }
         },
-        'scheduleForm.coach'() {
-            this.initFlatpickr();
-        },
-        showWhiteboardPanel(isOpen) {
-            if (isOpen) {
-                this.$nextTick(() => {
-                    this.initWhiteboard();
-                });
+        formatBlock(tag) {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            editor.focus();
+            if (tag === 'blockquote') {
+                const sel = window.getSelection();
+                if (!sel.rangeCount) return;
+                const node = sel.anchorNode;
+                const block = node.nodeType === 3 ? node.parentElement : node;
+                if (block.closest('blockquote')) {
+                    document.execCommand('outdent');
+                } else {
+                    const bq = document.createElement('blockquote');
+                    const p = document.createElement('p');
+                    p.textContent = block.textContent;
+                    bq.appendChild(p);
+                    block.replaceWith(bq);
+                    const range = document.createRange();
+                    range.selectNodeContents(p);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            } else {
+                document.execCommand('formatBlock', false, tag);
             }
-        }
-    },
-    mounted() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            this.holidayMode = true;
-            document.body.classList.add('dark-mode');
-        }
-
-        if (this.activeTab === 'whiteboard') {
-            this.$nextTick(() => {
-                this.initWhiteboard();
+            this.noteContent = editor.innerHTML;
+        },
+        formatInline(type) {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            editor.focus();
+            if (type === 'bold') document.execCommand('bold');
+            else if (type === 'italic') document.execCommand('italic');
+            else if (type === 'strikethrough') document.execCommand('strikeThrough');
+            else if (type === 'code') {
+                const sel = window.getSelection();
+                if (sel.rangeCount) {
+                    const range = sel.getRangeAt(0);
+                    const code = document.createElement('code');
+                    if (range.collapsed) {
+                        code.textContent = 'code';
+                        range.insertNode(code);
+                        range.selectNodeContents(code);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    } else {
+                        range.surroundContents(code);
+                    }
+                }
+            }
+            this.noteContent = editor.innerHTML;
+        },
+        formatList(type) {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            editor.focus();
+            if (type === 'ul') document.execCommand('insertUnorderedList');
+            else document.execCommand('insertOrderedList');
+            this.noteContent = editor.innerHTML;
+        },
+        insertDivider() {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            editor.focus();
+            document.execCommand('insertHTML', false, '<hr><p><br></p>');
+            this.noteContent = editor.innerHTML;
+        },
+        insertCodeBlock() {
+            const editor = this.$refs.noteEditor;
+            if (!editor) return;
+            editor.focus();
+            document.execCommand('insertHTML', false, '<pre><code>code here</code></pre><p><br></p>');
+            this.noteContent = editor.innerHTML;
+        },
+        autoSaveNote() {
+            if (this.saveTimeout) clearTimeout(this.saveTimeout);
+            this.saveTimeout = setTimeout(() => {
+                this.saveNote();
+            }, 1000);
+        },
+        saveNote() {
+            if (!this.activeNote) return;
+            update(ref(rtdb, `notes/${this.currentUser.uid}/${this.activeNote.id}`), {
+                title: this.noteTitle,
+                content: this.noteContent,
+                updatedAt: Date.now()
             });
+        },
+        deleteNote(note) {
+            this.showConfirm('Delete Note', 'Are you sure you want to delete this note?', async () => {
+                try {
+                    await remove(ref(rtdb, `notes/${this.currentUser.uid}/${note.id}`));
+                    if (this.activeNote?.id === note.id) {
+                        this.activeNote = null;
+                        this.noteTitle = '';
+                        this.noteContent = '';
+                    }
+                    this.showToastNotification('Note deleted');
+                } catch (e) {
+                    console.error("Error deleting note:", e);
+                }
+            });
+        },
+        async loadSettings() {
+            try {
+                const settingsDoc = await getDoc(doc(db, 'userSettings', this.currentUser.uid));
+                if (settingsDoc.exists()) {
+                    const data = settingsDoc.data();
+                    this.settings = { ...this.settings, ...data.settings };
+                    this.profileData = { ...this.profileData, ...data.profile };
+                }
+            } catch (e) {
+                console.error("Error loading settings:", e);
+            }
+        },
+        async saveSettings() {
+            try {
+                await setDoc(doc(db, 'userSettings', this.currentUser.uid), {
+                    settings: this.settings,
+                    profile: this.profileData,
+                    updatedAt: new Date()
+                }, { merge: true });
+                this.showToastNotification('Settings saved');
+            } catch (e) {
+                console.error("Error saving settings:", e);
+            }
+        },
+        async saveProfile() {
+            await this.saveSettings();
+        },
+        initCanvas() {
+            const container = this.$refs.canvasArea;
+            if (!container) return;
+            this.canvas = this.$refs.drawCanvas;
+            this.canvas.width = container.clientWidth;
+            this.canvas.height = container.clientHeight;
+            this.ctx = this.canvas.getContext('2d');
+            this.ctx.lineCap = 'round';
+            this.ctx.lineJoin = 'round';
+        },
+        startDrawing(e) {
+            if (this.wbTool === 'hand' || this.wbTool === 'pointer') return;
+            this.isDrawing = true;
+            this.currentPath = { points: [] };
+            this.draw(e);
+        },
+        draw(e) {
+            if (!this.isDrawing || !this.canvas) return;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            this.ctx.lineWidth = this.wbSize;
+            if (this.wbTool === 'eraser') {
+                this.ctx.strokeStyle = '#fafafa';
+                this.ctx.lineWidth = this.wbSize * 4;
+            } else {
+                this.ctx.strokeStyle = this.wbColor;
+            }
+            if (this.currentPath.points.length === 0) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+            } else {
+                this.ctx.lineTo(x, y);
+                this.ctx.stroke();
+            }
+            this.currentPath.points.push({ x, y });
+        },
+        stopDrawing() {
+            this.isDrawing = false;
+        },
+        clearBoard() {
+            if (this.ctx && this.canvas) {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        },
+        downloadBoard() {
+            if (!this.canvas) return;
+            const link = document.createElement('a');
+            link.download = 'whiteboard.png';
+            link.href = this.canvas.toDataURL();
+            link.click();
+        },
+        selectTool(tool) {
+            this.wbTool = tool;
+            this.showOptionsPanel = tool === 'pen';
         }
     }
 }).mount('#app');

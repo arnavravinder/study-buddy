@@ -1,6 +1,3 @@
-/* Mentee Dashboard Styles */
-
-/* Layout overrides */
 .main-content {
     display: grid;
     grid-template-columns: 1fr 340px;
@@ -9,28 +6,22 @@
     max-width: 1600px;
     margin: 0 auto;
     margin-left: 280px;
-    /* Sidebar width */
 }
-
 @media (max-width: 1200px) {
     .main-content {
         grid-template-columns: 1fr;
     }
 }
-
-/* Overview Tab */
 .overview-tab {
     display: flex;
     flex-direction: column;
     gap: 32px;
 }
-
 .welcome-section {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
 }
-
 .welcome-text h1 {
     font-size: 2.25rem;
     background: var(--gradient-primary);
@@ -39,7 +30,6 @@
     -webkit-text-fill-color: transparent;
     margin-bottom: 8px;
 }
-
 .next-session-card {
     background: var(--gradient-primary);
     border-radius: var(--radius-xl);
@@ -49,7 +39,6 @@
     overflow: hidden;
     box-shadow: var(--shadow-primary);
 }
-
 .next-session-card::before {
     content: '';
     position: absolute;
@@ -60,7 +49,6 @@
     background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
     border-radius: 50%;
 }
-
 .session-header {
     display: flex;
     justify-content: space-between;
@@ -69,7 +57,6 @@
     position: relative;
     z-index: 1;
 }
-
 .time-badge {
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
@@ -81,13 +68,11 @@
     align-items: center;
     gap: 8px;
 }
-
 .session-info h3 {
     font-size: 2rem;
     color: white;
     margin-bottom: 8px;
 }
-
 .subject-tag {
     display: inline-block;
     padding: 4px 12px;
@@ -99,14 +84,12 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
-
 .coach-info {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-top: 24px;
 }
-
 .coach-avatar {
     width: 48px;
     height: 48px;
@@ -118,17 +101,14 @@
     justify-content: center;
     font-weight: 700;
 }
-
 .coach-text .name {
     font-weight: 700;
     font-size: 1.1rem;
 }
-
 .coach-text .role {
     font-size: 0.9rem;
     opacity: 0.9;
 }
-
 .session-actions {
     margin-top: 32px;
     display: flex;
@@ -136,7 +116,6 @@
     position: relative;
     z-index: 1;
 }
-
 .btn-join {
     background: white;
     color: var(--primary-600);
@@ -150,18 +129,15 @@
     gap: 8px;
     transition: all var(--transition-base);
 }
-
 .btn-join:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
-
 .quick-actions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
 }
-
 .action-card {
     background: white;
     padding: 24px;
@@ -175,13 +151,11 @@
     cursor: pointer;
     transition: all var(--transition-base);
 }
-
 .action-card:hover {
     border-color: var(--primary-400);
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
 }
-
 .action-icon {
     width: 56px;
     height: 56px;
@@ -194,19 +168,15 @@
     color: var(--primary-600);
     transition: all var(--transition-base);
 }
-
 .action-card:hover .action-icon {
     background: var(--primary-600);
     color: white;
 }
-
 .action-title {
     font-family: var(--font-display);
     font-weight: 700;
     color: var(--gray-900);
 }
-
-/* Calendar Tab */
 .calendar-view {
     background: white;
     border-radius: var(--radius-xl);
@@ -214,7 +184,6 @@
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-200);
 }
-
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -224,7 +193,6 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
 }
-
 .calendar-day {
     background: white;
     min-height: 120px;
@@ -233,22 +201,18 @@
     flex-direction: column;
     gap: 8px;
 }
-
 .calendar-day.other-month {
     background: var(--gray-50);
     color: var(--gray-400);
 }
-
 .calendar-day.today {
     background: #F5F8FF;
 }
-
 .day-number {
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--gray-700);
 }
-
 .today .day-number {
     color: var(--primary-600);
     background: white;
@@ -260,7 +224,6 @@
     border-radius: 50%;
     box-shadow: var(--shadow-sm);
 }
-
 .event-pill {
     font-size: 0.75rem;
     padding: 4px 8px;
@@ -272,14 +235,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-/* My Subjects Tab */
 .subjects-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 24px;
 }
-
 .subject-card {
     background: white;
     border-radius: var(--radius-lg);
@@ -287,19 +247,16 @@
     padding: 24px;
     transition: all var(--transition-base);
 }
-
 .subject-card:hover {
     border-color: var(--primary-300);
     box-shadow: var(--shadow-lg);
     transform: translateY(-4px);
 }
-
 .subject-header {
     display: flex;
     gap: 16px;
     margin-bottom: 20px;
 }
-
 .subject-icon {
     width: 48px;
     height: 48px;
@@ -311,14 +268,11 @@
     color: white;
     font-size: 1.5rem;
 }
-
-/* Community Tab */
 .questions-feed {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
-
 .question-item {
     background: white;
     border-radius: var(--radius-lg);
@@ -328,12 +282,10 @@
     gap: 20px;
     transition: all var(--transition-fast);
 }
-
 .question-item:hover {
     border-color: var(--gray-300);
     box-shadow: var(--shadow-md);
 }
-
 .vote-box {
     display: flex;
     flex-direction: column;
@@ -341,14 +293,11 @@
     gap: 4px;
     min-width: 48px;
 }
-
 .vote-count {
     font-weight: 700;
     font-size: 1.1rem;
     color: var(--gray-900);
 }
-
-/* Chat Interface */
 .chat-container {
     background: white;
     border-radius: var(--radius-xl);
@@ -358,7 +307,6 @@
     flex-direction: column;
     overflow: hidden;
 }
-
 .chat-messages {
     flex: 1;
     padding: 24px;
@@ -368,39 +316,33 @@
     gap: 20px;
     background: var(--gray-50);
 }
-
 .message {
     display: flex;
     gap: 12px;
     max-width: 80%;
 }
-
 .message.user {
     align-self: flex-end;
     flex-direction: row-reverse;
 }
-
 .message-bubble {
     padding: 16px;
     border-radius: 16px;
     position: relative;
     line-height: 1.6;
 }
-
 .message.ai .message-bubble {
     background: white;
     border-top-left-radius: 4px;
     box-shadow: var(--shadow-sm);
     color: var(--gray-800);
 }
-
 .message.user .message-bubble {
     background: var(--primary-600);
     color: white;
     border-top-right-radius: 4px;
     box-shadow: var(--shadow-md);
 }
-
 .chat-input-area {
     padding: 20px;
     background: white;
@@ -408,25 +350,19 @@
     display: flex;
     gap: 12px;
 }
-
-/* Animations */
 @keyframes slideIn {
     from {
         opacity: 0;
         transform: translateY(20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-
 .animate-enter {
     animation: slideIn 0.4s ease-out forwards;
 }
-
-/* Right Panel (if visible) */
 .right-sidebar {
     position: sticky;
     top: 32px;
@@ -434,7 +370,6 @@
     flex-direction: column;
     gap: 24px;
 }
-
 .calendar-mini {
     background: white;
     padding: 20px;

@@ -1,3 +1,5 @@
 node_modules/
 game/
 .env
+.vercel
+.env*.local

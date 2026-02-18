@@ -1,10 +1,13 @@
+import { db, auth } from './firebase-config.js';
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 const { createApp } = Vue;
-
 createApp({
     data() {
         return {
             currentStep: 0,
             submitted: false,
+            currentUser: null,
             formData: {
                 grade: null,
                 subjects: [],
@@ -27,76 +30,62 @@ createApp({
         };
     },
     computed: {
-        progress() {
-            return ((this.currentStep - 1) / 8) * 100;
-        },
-        availableSubjects() {
-            return this.formData.grade ? this.gradeSubjects[this.formData.grade] : [];
-        },
+        progress() { return ((this.currentStep - 1) / 8) * 100; },
+        availableSubjects() { return this.formData.grade ? this.gradeSubjects[this.formData.grade] : []; },
         canProceed() {
             switch (this.currentStep) {
-                case 1:
-                    return this.formData.grade !== null;
-                case 2:
-                    return this.formData.subjects.length > 0;
-                case 3:
-                    return this.formData.numSubjects !== null;
-                case 4:
-                    return this.formData.freeDays.length > 0;
-                case 5:
-                    return this.formData.topicsConfidence.trim().length > 0;
-                case 6:
-                case 7:
-                case 8:
-                case 9:
-                    return true;
-                default:
-                    return false;
+                case 1: return this.formData.grade !== null;
+                case 2: return this.formData.subjects.length > 0;
+                case 3: return this.formData.numSubjects !== null;
+                case 4: return this.formData.freeDays.length > 0;
+                case 5: return this.formData.topicsConfidence.trim().length > 0;
+                case 6: case 7: case 8: case 9: return true;
+                default: return false;
             }
         }
     },
     methods: {
-        nextStep() {
-            if (this.canProceed && this.currentStep < 9) {
-                this.currentStep++;
-            }
-        },
-        previousStep() {
-            if (this.currentStep > 1) {
-                this.currentStep--;
-            }
-        },
+        nextStep() { if (this.canProceed && this.currentStep < 9) this.currentStep++; },
+        previousStep() { if (this.currentStep > 1) this.currentStep--; },
         toggleSubject(subject) {
             const index = this.formData.subjects.indexOf(subject);
-            if (index > -1) {
-                this.formData.subjects.splice(index, 1);
-            } else {
-                this.formData.subjects.push(subject);
-            }
+            if (index > -1) this.formData.subjects.splice(index, 1);
+            else this.formData.subjects.push(subject);
         },
         toggleDay(day) {
             const index = this.formData.freeDays.indexOf(day);
-            if (index > -1) {
-                this.formData.freeDays.splice(index, 1);
-            } else {
-                this.formData.freeDays.push(day);
-            }
+            if (index > -1) this.formData.freeDays.splice(index, 1);
+            else this.formData.freeDays.push(day);
         },
-        startApplication() {
-            this.currentStep = 1;
-        },
-        handleSubmit() {
+        startApplication() { this.currentStep = 1; },
+        async handleSubmit() {
             if (this.canProceed) {
-                console.log('Coach Application Data:', this.formData);
-                this.submitted = true;
-
-                setTimeout(() => {
-                    window.location.href = '/mentor/dashboard/index.html';
-                }, 3000);
+                try {
+                    if (!this.currentUser) {
+                        alert("You must be logged in to submit. Please wait a moment for authentication to initialize.");
+                        return;
+                    }
+                    await setDoc(doc(db, "users", this.currentUser.uid), {
+                        role: 'mentor',
+                        applicationData: this.formData,
+                        updatedAt: new Date()
+                    }, { merge: true });
+                    this.submitted = true;
+                    setTimeout(() => {
+                        window.location.href = '/mentor/dashboard/index.html';
+                    }, 4000);
+                } catch (error) {
+                    console.error("Error saving coach application:", error);
+                    alert("Something went wrong. Please try again.");
+                }
             }
         }
     },
     mounted() {
+        onAuthStateChanged(auth, (user) => {
+            this.currentUser = user;
+        });
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && this.currentStep === 0) {
                 this.startApplication();

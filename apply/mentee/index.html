@@ -5,43 +5,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Student Application</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/landing.css">
+    <link rel="stylesheet" href="/styles/login.css">
     <link rel="stylesheet" href="/styles/application.css">
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <style>
+        body {
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden !important;
+
+            background-image: url('/assets/onboarding-bg.png');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+        }
+
+
+        .welcome-slide,
+        .form {
+            background: transparent !important;
+            backdrop-filter: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+
+        #app {
+            width: 100%;
+
+            position: relative;
+            z-index: 2;
+            display: flex;
+
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+        }
+
+
+        .question h2,
+        .welcome-content h2,
+        .subtitle,
+        .question p,
+        .welcome-content p {
+            color: #1a1a1a;
+
+        }
+
+
+        .topics-textarea {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 
 <body>
+    <div class="transition-overlay"></div>
     <div id="app">
-        <div class="container">
-            <div class="header">
-                <div class="logo">
-                    <i class="ph-bold ph-graduation-cap"></i>
-                    Study Buddy
-                </div>
-                <p class="subtitle">Join as a Student</p>
-            </div>
-
+        <div class="login-container">
             <div class="progress-bar" v-if="currentStep > 0 && !submitted">
                 <div class="progress-fill" :style="{width: progress + '%'}"></div>
             </div>
-
             <div v-if="currentStep === 0" class="welcome-slide">
                 <div class="welcome-content">
                     <div style="font-size: 3rem; margin-bottom: 1rem; color: #111;">
                         <i class="ph-duotone ph-student"></i>
                     </div>
-                    <h2>Student Onboarding</h2>
-                    <p>Welcome to Study Buddy! Let's find you the perfect study partner to help you succeed
-                        academically.</p>
-                    <button @click="startApplication" @keydown.enter="startApplication" class="start-btn" autofocus>
-                        Start Application
-                        <i class="ph-bold ph-arrow-right"></i>
+                    <h2>Let's Get You Started!</h2>
+                    <p>We need a little info to find your perfect study match.</p>
+                    <button class="start-btn" @click="startApplication">
+                        Start Application <i class="ph-bold ph-arrow-right"></i>
                     </button>
                 </div>
             </div>
-
             <form @submit.prevent="handleSubmit" class="form" v-if="currentStep > 0 && !submitted">
-                <!-- Step 1: Grade -->
                 <div v-if="currentStep === 1" class="step">
                     <div class="question">
                         <h2>What grade are you in?</h2>
@@ -54,8 +110,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 2: Subjects -->
                 <div v-if="currentStep === 2" class="step">
                     <div class="question">
                         <h2>Which subjects do you need help with?</h2>
@@ -69,8 +123,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 3: Days -->
                 <div v-if="currentStep === 3" class="step">
                     <div class="question">
                         <h2>When are you available to study?</h2>
@@ -85,8 +137,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 4: Topics -->
                 <div v-if="currentStep === 4" class="step">
                     <div class="question">
                         <h2>What specific topics do you need help with?</h2>
@@ -96,8 +146,6 @@
                         placeholder="e.g., Algebra equations&#10;Photosynthesis&#10;Essay writing"
                         class="topics-textarea"></textarea>
                 </div>
-
-                <!-- Step 5: Grade Avg -->
                 <div v-if="currentStep === 5" class="step">
                     <div class="question">
                         <h2>What's your current grade average?</h2>
@@ -111,15 +159,17 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 6: Confidence -->
                 <div v-if="currentStep === 6" class="step">
                     <div class="question">
                         <h2>How confident are you in your subjects?</h2>
                         <p>Rate your overall confidence level (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-smiley" style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.subjectConfidence ? 'ph-fill' : 'ph-bold', 'ph-smiley', 'rating-icon', {active: n <= formData.subjectConfidence}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.subjectConfidence" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Not confident</span>
@@ -128,16 +178,17 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Step 7: Senior Comfort -->
                 <div v-if="currentStep === 7" class="step">
                     <div class="question">
                         <h2>How comfortable are you talking to older students?</h2>
                         <p>Rate your comfort level (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-chat-circle-dots"
-                            style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.seniorComfort ? 'ph-fill' : 'ph-bold', 'ph-chat-circle-dots', 'rating-icon', {active: n <= formData.seniorComfort}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.seniorComfort" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Not comfortable</span>
@@ -146,30 +197,23 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Navigation -->
                 <div class="navigation">
                     <button type="button" @click="previousStep" v-if="currentStep > 1" class="btn-secondary">
                         <i class="ph-bold ph-arrow-left"></i>
                         Previous
                     </button>
-
-                    <!-- Spacer if no prev button -->
                     <div v-else></div>
-
                     <button type="button" @click="nextStep" v-if="currentStep > 0 && currentStep < 7"
                         :disabled="!canProceed" class="btn-primary">
                         Next
                         <i class="ph-bold ph-arrow-right"></i>
                     </button>
-
                     <button type="submit" v-if="currentStep === 7" :disabled="!canProceed" class="btn-primary">
                         Submit Application
                         <i class="ph-bold ph-check"></i>
                     </button>
                 </div>
             </form>
-
             <div v-if="submitted" class="success-message">
                 <div class="success-icon">
                     <i class="ph-fill ph-check-circle"></i>
@@ -179,9 +223,16 @@
             </div>
         </div>
     </div>
-
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="/scripts/mentee-application.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script type="module" src="/scripts/mentee-application.js"></script>
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+        <filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="3" result="noise" seed="5" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="blurredNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="30" xChannelSelector="R"
+                yChannelSelector="G" />
+        </filter>
+    </svg>
 </body>
 
 </html>

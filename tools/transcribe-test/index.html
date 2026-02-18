@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription Test - Study Buddy</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: #0f0f0f;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem;
+            border-radius: 24px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top-color: rgba(255, 255, 255, 0.2);
+            border-left-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-brand {
+            font-weight: 400;
+            opacity: 0.8;
+            font-size: 1rem;
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            gap: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .recorder-card {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .recorder-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .recorder-status i {
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.4);
+            transition: color 0.3s ease;
+        }
+
+        .recorder-status.recording i {
+            color: #ef4444;
+            animation: pulse-glow 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                opacity: 0.7;
+                filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.3));
+            }
+
+            50% {
+                opacity: 1;
+                filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.6));
+            }
+        }
+
+        .recorder-status p {
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .timer {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 2px;
+        }
+
+        .waveform-container {
+            width: 100%;
+            height: 80px;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .waveform-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .recorder-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .rec-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+
+        .rec-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+
+        .rec-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .rec-btn.record {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+
+        .rec-btn.record:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.35);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .rec-btn.record.recording {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        @keyframes pulse-border {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .rec-btn.transcribe {
+            background: rgba(96, 165, 250, 0.2);
+            border-color: rgba(96, 165, 250, 0.5);
+            color: #60a5fa;
+            width: auto;
+            padding: 0 1.75rem;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            gap: 0.5rem;
+        }
+
+        .rec-btn.transcribe:hover:not(:disabled) {
+            background: rgba(96, 165, 250, 0.35);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+        }
+
+        .transcript-card {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .transcript-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .transcript-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .transcript-header h2 i {
+            color: #60a5fa;
+        }
+
+        .transcript-body {
+            min-height: 120px;
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        .transcript-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            gap: 0.75rem;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .transcript-empty i {
+            font-size: 2.5rem;
+        }
+
+        .transcript-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .transcript-chunk {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.5rem;
+            border-left: 3px solid rgba(96, 165, 250, 0.4);
+            transition: background 0.2s;
+        }
+
+        .transcript-chunk:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .chunk-timestamp {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 0.25rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chunk-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .loading-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            gap: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .loading-indicator i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-banner {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .error-banner i {
+            font-size: 1.25rem;
+            color: #ef4444;
+        }
+
+        .audio-playback {
+            width: 100%;
+            display: none;
+        }
+
+        .audio-playback audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <h1>
+            <i class="ph ph-microphone" style="color: #60a5fa;"></i>
+            Transcription Test
+            <span class="header-brand">Study Buddy</span>
+        </h1>
+    </header>
+
+    <div class="main-content">
+        <div class="recorder-card">
+            <div class="recorder-status" id="recorderStatus">
+                <i class="ph-duotone ph-microphone"></i>
+                <p id="statusText">Ready to record</p>
+            </div>
+
+            <div class="timer" id="timer">00:00</div>
+
+            <div class="waveform-container">
+                <canvas id="waveformCanvas"></canvas>
+            </div>
+
+            <div class="audio-playback" id="audioPlayback">
+                <audio id="audioPlayer" controls></audio>
+            </div>
+
+            <div class="recorder-controls">
+                <button class="rec-btn record" id="recordBtn" onclick="toggleRecording()" title="Start Recording">
+                    <i class="ph-fill ph-record"></i>
+                </button>
+                <button class="rec-btn transcribe" id="transcribeBtn" onclick="transcribeAudio()" disabled
+                    title="Transcribe Recording">
+                    <i class="ph ph-text-aa"></i>
+                    Transcribe
+                </button>
+            </div>
+        </div>
+
+        <div class="transcript-card">
+            <div class="transcript-header">
+                <h2><i class="ph ph-subtitles"></i> Transcript</h2>
+                <button class="copy-btn" id="copyBtn" onclick="copyTranscript()" style="display:none;">
+                    <i class="ph ph-copy"></i> Copy
+                </button>
+            </div>
+            <div class="transcript-body" id="transcriptBody">
+                <div class="transcript-empty">
+                    <i class="ph-duotone ph-text-align-left"></i>
+                    <p>Record audio and hit Transcribe to see the transcript here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioBlob = null;
+        let audioStream = null;
+        let analyserNode = null;
+        let audioContext = null;
+        let animationId = null;
+        let timerInterval = null;
+        let recordingStartTime = null;
+        let fullTranscriptText = '';
+
+        const canvas = document.getElementById('waveformCanvas');
+        const canvasCtx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            canvasCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawIdleWaveform() {
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            canvasCtx.lineWidth = 1;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(0, h / 2);
+            canvasCtx.lineTo(w, h / 2);
+            canvasCtx.stroke();
+        }
+        drawIdleWaveform();
+
+        function drawWaveform() {
+            if (!analyserNode) return;
+            animationId = requestAnimationFrame(drawWaveform);
+
+            const bufferLength = analyserNode.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserNode.getByteTimeDomainData(dataArray);
+
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            canvasCtx.clearRect(0, 0, w, h);
+
+            const gradient = canvasCtx.createLinearGradient(0, 0, w, 0);
+            gradient.addColorStop(0, 'rgba(96, 165, 250, 0.6)');
+            gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.6)');
+            gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');
+
+            canvasCtx.strokeStyle = gradient;
+            canvasCtx.lineWidth = 2;
+            canvasCtx.beginPath();
+
+            const sliceWidth = w / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * (h / 2);
+                if (i === 0) canvasCtx.moveTo(x, y);
+                else canvasCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(w, h / 2);
+            canvasCtx.stroke();
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - recordingStartTime;
+            const mins = Math.floor(elapsed / 60000);
+            const secs = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent =
+                String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        }
+
+        async function toggleRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                audioChunks = [];
+                audioBlob = null;
+
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(audioStream);
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = 2048;
+                source.connect(analyserNode);
+
+                mediaRecorder = new MediaRecorder(audioStream, {
+                    mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? 'audio/webm;codecs=opus'
+                        : 'audio/webm'
+                });
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(audioBlob);
+                    const player = document.getElementById('audioPlayer');
+                    player.src = url;
+                    document.getElementById('audioPlayback').style.display = 'block';
+                    document.getElementById('transcribeBtn').disabled = false;
+                };
+
+                mediaRecorder.start(1000);
+
+                recordingStartTime = Date.now();
+                timerInterval = setInterval(updateTimer, 500);
+                drawWaveform();
+
+                const recordBtn = document.getElementById('recordBtn');
+                recordBtn.classList.add('recording');
+                recordBtn.innerHTML = '<i class="ph-fill ph-stop"></i>';
+                recordBtn.title = 'Stop Recording';
+
+                const status = document.getElementById('recorderStatus');
+                status.classList.add('recording');
+                document.getElementById('statusText').textContent = 'Recording...';
+
+                document.getElementById('transcribeBtn').disabled = true;
+
+            } catch (err) {
+                console.error('Failed to start recording:', err);
+                showError('Microphone access denied. Please allow microphone permissions.');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+
+            if (audioStream) {
+                audioStream.getTracks().forEach(t => t.stop());
+                audioStream = null;
+            }
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+                analyserNode = null;
+            }
+
+            clearInterval(timerInterval);
+
+            const recordBtn = document.getElementById('recordBtn');
+            recordBtn.classList.remove('recording');
+            recordBtn.innerHTML = '<i class="ph-fill ph-record"></i>';
+            recordBtn.title = 'Start Recording';
+
+            const status = document.getElementById('recorderStatus');
+            status.classList.remove('recording');
+            document.getElementById('statusText').textContent = 'Recording complete';
+
+            drawIdleWaveform();
+        }
+
+        async function transcribeAudio() {
+            if (!audioBlob) return;
+
+            const transcriptBody = document.getElementById('transcriptBody');
+            transcriptBody.innerHTML = `
+                <div class="loading-indicator">
+                    <i class="ph ph-spinner"></i>
+                    <p>Transcribing audio...</p>
+                </div>
+            `;
+
+            document.getElementById('transcribeBtn').disabled = true;
+            document.getElementById('copyBtn').style.display = 'none';
+
+            try {
+                const reader = new FileReader();
+                const base64 = await new Promise((resolve, reject) => {
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(audioBlob);
+                });
+
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audio: base64 })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                let output = result.output;
+                if (!output && result.status === 'succeeded') {
+                    output = result;
+                }
+
+                if (output && output.chunks && output.chunks.length > 0) {
+                    renderChunkedTranscript(output.chunks);
+                } else if (output && output.text) {
+                    renderPlainTranscript(output.text);
+                } else if (typeof output === 'string') {
+                    renderPlainTranscript(output);
+                } else {
+                    renderPlainTranscript(JSON.stringify(result, null, 2));
+                }
+
+                document.getElementById('transcribeBtn').disabled = false;
+
+            } catch (err) {
+                console.error('Transcription failed:', err);
+                transcriptBody.innerHTML = `
+                    <div class="error-banner">
+                        <i class="ph ph-warning-circle"></i>
+                        <span>${err.message}</span>
+                    </div>
+                `;
+                document.getElementById('transcribeBtn').disabled = false;
+            }
+        }
+
+        function formatTimestamp(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        }
+
+        function renderChunkedTranscript(chunks) {
+            const body = document.getElementById('transcriptBody');
+            fullTranscriptText = chunks.map(c => c.text.trim()).join(' ');
+
+            body.innerHTML = chunks.map(chunk => {
+                const start = formatTimestamp(chunk.timestamp[0]);
+                const end = formatTimestamp(chunk.timestamp[1]);
+                return `
+                    <div class="transcript-chunk">
+                        <div class="chunk-timestamp">${start} — ${end}</div>
+                        <div class="chunk-text">${chunk.text.trim()}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('copyBtn').style.display = 'flex';
+        }
+
+        function renderPlainTranscript(text) {
+            const body = document.getElementById('transcriptBody');
+            fullTranscriptText = text;
+            body.innerHTML = `<div class="transcript-text">${text}</div>`;
+            document.getElementById('copyBtn').style.display = 'flex';
+        }
+
+        function showError(msg) {
+            const body = document.getElementById('transcriptBody');
+            body.innerHTML = `
+                <div class="error-banner">
+                    <i class="ph ph-warning-circle"></i>
+                    <span>${msg}</span>
+                </div>
+            `;
+        }
+
+        async function copyTranscript() {
+            if (!fullTranscriptText) return;
+            try {
+                await navigator.clipboard.writeText(fullTranscriptText);
+                const btn = document.getElementById('copyBtn');
+                btn.innerHTML = '<i class="ph ph-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="ph ph-copy"></i> Copy';
+                }, 2000);
+            } catch (e) {
+                console.error('Copy failed:', e);
+            }
+        }
+    </script>
+</body>
+
+</html>

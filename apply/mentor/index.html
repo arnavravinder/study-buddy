@@ -5,43 +5,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Buddy - Coach Application</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/landing.css">
+    <link rel="stylesheet" href="/styles/login.css">
     <link rel="stylesheet" href="/styles/application.css">
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <style>
+        body {
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden !important;
+
+            background-image: url('/assets/onboarding-bg.png');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+        }
+
+
+        .welcome-slide,
+        .form {
+            background: transparent !important;
+            backdrop-filter: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+
+        #app {
+            width: 100%;
+
+            position: relative;
+            z-index: 2;
+            display: flex;
+
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+        }
+
+
+        .question h2,
+        .welcome-content h2,
+        .subtitle,
+        .question p,
+        .welcome-content p {
+            color: #1a1a1a;
+
+        }
+
+
+        .topics-textarea {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 
 <body>
+    <div class="transition-overlay"></div>
     <div id="app">
-        <div class="container">
-            <div class="header">
-                <div class="logo">
-                    <i class="ph-bold ph-graduation-cap"></i>
-                    Study Buddy
-                </div>
-                <p class="subtitle">Join as a Coach</p>
-            </div>
-
+        <div class="login-container">
             <div class="progress-bar" v-if="currentStep > 0 && !submitted">
                 <div class="progress-fill" :style="{width: progress + '%'}"></div>
             </div>
-
             <div v-if="currentStep === 0" class="welcome-slide">
                 <div class="welcome-content">
-                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #111;">
-                        <i class="ph-duotone ph-chalkboard-teacher"></i>
-                    </div>
-                    <h2>Mentor Onboarding</h2>
-                    <p>Welcome to Study Buddy! Join our coaching team and help guide younger students to academic
-                        success.</p>
-                    <button @click="startApplication" @keydown.enter="startApplication" class="start-btn" autofocus>
-                        Start Application
-                        <i class="ph-bold ph-arrow-right"></i>
+                    <h2>Ready to Make an Impact?</h2>
+                    <p>Help us understand your expertise so we can match you with students who need your help.</p>
+                    <button class="start-btn" @click="startApplication">
+                        Start Application <i class="ph-bold ph-arrow-right"></i>
                     </button>
                 </div>
             </div>
-
             <form @submit.prevent="handleSubmit" class="form" v-if="currentStep > 0 && !submitted">
-                <!-- Step 1: Grade -->
                 <div v-if="currentStep === 1" class="step">
                     <div class="question">
                         <h2>What grade are you in?</h2>
@@ -54,8 +107,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 2: Subjects -->
                 <div v-if="currentStep === 2" class="step">
                     <div class="question">
                         <h2>Which subjects can you help teach?</h2>
@@ -69,8 +120,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 3: Num Subjects -->
                 <div v-if="currentStep === 3" class="step">
                     <div class="question">
                         <h2>How many subjects would you like to teach?</h2>
@@ -83,8 +132,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 4: Days -->
                 <div v-if="currentStep === 4" class="step">
                     <div class="question">
                         <h2>When are you available to teach?</h2>
@@ -99,8 +146,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Step 5: Topics Confidence -->
                 <div v-if="currentStep === 5" class="step">
                     <div class="question">
                         <h2>What topics are you most confident teaching?</h2>
@@ -110,15 +155,17 @@
                         placeholder="e.g., Quadratic equations&#10;Cell division&#10;Essay structure and grammar"
                         class="topics-textarea"></textarea>
                 </div>
-
-                <!-- Step 6: Confidence Slider -->
                 <div v-if="currentStep === 6" class="step">
                     <div class="question">
                         <h2>Rate your subject confidence</h2>
                         <p>How confident are you in your teaching subjects? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-star" style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.subjectConfidence ? 'ph-fill' : 'ph-bold', 'ph-star', 'rating-icon', {active: n <= formData.subjectConfidence}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.subjectConfidence" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Somewhat confident</span>
@@ -127,16 +174,17 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Step 7: Leadership -->
                 <div v-if="currentStep === 7" class="step">
                     <div class="question">
                         <h2>Rate your leadership skills</h2>
                         <p>How well do you guide and motivate others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-users-three"
-                            style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.leadership ? 'ph-fill' : 'ph-bold', 'ph-users-three', 'rating-icon', {active: n <= formData.leadership}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.leadership" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
@@ -145,15 +193,17 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Step 8: Nurturing -->
                 <div v-if="currentStep === 8" class="step">
                     <div class="question">
                         <h2>Rate your nurturing ability</h2>
                         <p>How well do you support and encourage others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-heart" style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.nurturing ? 'ph-fill' : 'ph-bold', 'ph-heart', 'rating-icon', {active: n <= formData.nurturing}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.nurturing" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Learning</span>
@@ -162,16 +212,17 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Step 9: Empathy -->
                 <div v-if="currentStep === 9" class="step">
                     <div class="question">
                         <h2>Rate your empathy level</h2>
                         <p>How well do you understand and relate to others? (1-5)</p>
                     </div>
                     <div class="confidence-slider">
-                        <i class="ph-duotone ph-hand-heart"
-                            style="font-size: 2rem; margin-bottom: 1rem; color: #111;"></i>
+                        <div class="rating-visuals">
+                            <i v-for="n in 5" :key="n"
+                                :class="[n <= formData.empathy ? 'ph-fill' : 'ph-bold', 'ph-hand-heart', 'rating-icon', {active: n <= formData.empathy}]">
+                            </i>
+                        </div>
                         <input type="range" v-model="formData.empathy" min="1" max="5" class="slider">
                         <div class="slider-labels">
                             <span>Developing</span>
@@ -180,30 +231,23 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Navigation -->
                 <div class="navigation">
                     <button type="button" @click="previousStep" v-if="currentStep > 1" class="btn-secondary">
                         <i class="ph-bold ph-arrow-left"></i>
                         Previous
                     </button>
-
-                    <!-- Spacer -->
                     <div v-else></div>
-
                     <button type="button" @click="nextStep" v-if="currentStep > 0 && currentStep < 9"
                         :disabled="!canProceed" class="btn-primary">
                         Next
                         <i class="ph-bold ph-arrow-right"></i>
                     </button>
-
                     <button type="submit" v-if="currentStep === 9" :disabled="!canProceed" class="btn-primary">
                         Submit Application
                         <i class="ph-bold ph-check"></i>
                     </button>
                 </div>
             </form>
-
             <div v-if="submitted" class="success-message">
                 <div class="success-icon">
                     <i class="ph-fill ph-check-circle"></i>
@@ -214,9 +258,16 @@
             </div>
         </div>
     </div>
-
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="/scripts/mentor-application.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script type="module" src="/scripts/mentor-application.js"></script>
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+        <filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="3" result="noise" seed="5" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="blurredNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="30" xChannelSelector="R"
+                yChannelSelector="G" />
+        </filter>
+    </svg>
 </body>
 
 </html>

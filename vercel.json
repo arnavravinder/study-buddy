@@ -1,7 +1,12 @@
 {
+  "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
     {
       "source": "/mentee/dashboard",
       "destination": "/mentee/dashboard/index.html"
@@ -29,6 +34,24 @@
     {
       "source": "/tools/whiteboard",
       "destination": "/tools/whiteboard/index.html"
+    },
+    {
+      "source": "/tools/video-test",
+      "destination": "/tools/video-test/index.html"
+    },
+    {
+      "source": "/tools/call",
+      "destination": "/tools/call/index.html"
+    },
+    {
+      "source": "/tools/transcribe-test",
+      "destination": "/tools/transcribe-test/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }

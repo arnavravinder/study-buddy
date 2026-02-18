@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap');
-
 body {
     min-height: 100vh;
     display: flex;
@@ -10,8 +9,13 @@ body {
     overflow: hidden;
     position: relative;
     color: #1a1a1a;
+    box-sizing: border-box;
 }
-
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
 body::before {
     content: "";
     position: absolute;
@@ -23,8 +27,6 @@ body::before {
     z-index: -1;
     pointer-events: none;
 }
-
-
 .login-container {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: url(#frosted) blur(10px);
@@ -33,6 +35,7 @@ body::before {
     padding: 3.5rem 3rem;
     width: 100%;
     max-width: 500px;
+    margin: 0 auto;
     box-shadow:
         0 0 0 2px rgba(255, 255, 255, 0.3),
         0 20px 50px rgba(0, 0, 0, 0.15);
@@ -43,7 +46,6 @@ body::before {
     border-top-color: rgba(255, 255, 255, 0.7);
     border-left-color: rgba(255, 255, 255, 0.7);
 }
-
 .logo-large {
     font-size: 2.75rem;
     font-weight: 600;
@@ -56,7 +58,6 @@ body::before {
     letter-spacing: -0.04em;
     text-shadow: 0 2px 10px rgba(255, 255, 255, 0.5);
 }
-
 .intro-text {
     font-weight: 300;
     font-size: 1.5rem;
@@ -65,7 +66,6 @@ body::before {
     line-height: 1.4;
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
 }
-
 .login-btn {
     width: 100%;
     padding: 1.25rem;
@@ -86,18 +86,15 @@ body::before {
     font-family: 'Libre Franklin', sans-serif;
     margin-bottom: 1rem;
 }
-
 .login-btn:hover {
     background: rgba(255, 255, 255, 0.4);
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     border-color: #fff;
 }
-
 .login-btn:active {
     transform: translateY(0);
 }
-
 .divider {
     display: flex;
     align-items: center;
@@ -106,7 +103,6 @@ body::before {
     font-size: 0.8rem;
     font-weight: 400;
 }
-
 .divider::before,
 .divider::after {
     content: "";
@@ -114,34 +110,27 @@ body::before {
     height: 1px;
     background: rgba(0, 0, 0, 0.1);
 }
-
 .divider::before {
     margin-right: 1.5rem;
 }
-
 .divider::after {
     margin-left: 1.5rem;
 }
-
-
 #role-selection {
     display: none;
     animation: fadeIn 0.5s ease forwards;
 }
-
 .role-header {
     font-size: 1.5rem;
     font-weight: 300;
     margin-bottom: 2rem;
     color: #111;
 }
-
 .role-options {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
-
 .role-btn {
     width: 100%;
     padding: 1.25rem 2rem;
@@ -156,13 +145,11 @@ body::before {
     gap: 1rem;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
 }
-
 .role-btn:hover {
     background: rgba(255, 255, 255, 0.6);
     border-color: #fff;
     transform: translateX(4px);
 }
-
 .role-btn-icon {
     width: 40px;
     height: 40px;
@@ -174,29 +161,24 @@ body::before {
     color: #333;
     font-size: 1.2rem;
 }
-
 .role-btn-text {
     font-size: 1.1rem;
     font-weight: 400;
     color: #111;
 }
-
 .fade-in {
     animation: fadeIn 0.4s ease forwards;
 }
-
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-
 .loader {
     width: 20px;
     height: 20px;
@@ -206,12 +188,10 @@ body::before {
     display: inline-block;
     animation: rotation 1s linear infinite;
 }
-
 @keyframes rotation {
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }

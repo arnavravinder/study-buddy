@@ -1,29 +1,60 @@
 import { auth, db } from "./firebase-config.js";
-import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
 const provider = new GoogleAuthProvider();
 let currentUser = null;
+let authChecked = false;
 
-// Function to handle the actual role selection click
-export async function handleRoleSelection(role) {
+const authStatePromise = new Promise((resolve) => {
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        authChecked = true;
+        if (user) {
+        }
+        resolve(user);
+    });
+});
+
+
+export async function checkAuthAndRedirect() {
+    await authStatePromise;
     if (!currentUser) {
-        console.error("No user logged in when selecting role");
-        return;
+        return false;
     }
-
     try {
         const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.role) {
+                if (userData.role === 'mentee' || userData.role === 'student') {
+                    window.location.href = "/mentee/dashboard/";
+                } else if (userData.role === 'mentor') {
+                    window.location.href = "/mentor/dashboard/";
+                }
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error("Error checking auth:", error);
+    }
+    return false;
+}
 
-        // Update user with selected role
+export async function handleRoleSelection(role) {
+    await authStatePromise;
+    if (!currentUser) {
+        console.error("No user logged in when selecting role");
+        alert("Please log in first.");
+        return;
+    }
+    try {
+        const userRef = doc(db, "users", currentUser.uid);
         await setDoc(userRef, {
             role: role,
             updatedAt: serverTimestamp()
         }, { merge: true });
-
-        console.log("Role updated:", role);
         redirectBasedOnRole(role);
-
     } catch (error) {
         console.error("Error saving role:", error);
         alert("Failed to save role. Please try again.");
@@ -40,30 +71,36 @@ function redirectBasedOnRole(role) {
     }
 }
 
+export async function logout() {
+    try {
+        await signOut(auth);
+        currentUser = null;
+        window.location.href = "/";
+    } catch (error) {
+        console.error("Error signing out:", error);
+    }
+}
+
 export function signInWithGoogle() {
     return signInWithPopup(auth, provider)
         .then(async (result) => {
             const user = result.user;
             currentUser = user;
-            console.log("User signed in:", user.uid);
-
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
-
             if (userSnap.exists()) {
                 const userData = userSnap.data();
                 if (userData.role) {
-                    // User has a role, redirect immediately
-                    console.log("User has role:", userData.role);
-                    redirectBasedOnRole(userData.role);
+
+                    if (userData.role === 'mentee' || userData.role === 'student') {
+                        window.location.href = "/mentee/dashboard/";
+                    } else if (userData.role === 'mentor') {
+                        window.location.href = "/mentor/dashboard/";
+                    }
                 } else {
-                    // User exists but has no role (rare, but possible)
-                    console.log("User exists but no role. Showing selection.");
-                    if (window.showRoleSelection) window.showRoleSelection();
+                    window.location.href = "/onboarding.html";
                 }
             } else {
-                // New User: Save basic info and show role selection
-                console.log("New user. Creating doc and showing selection.");
                 await setDoc(userRef, {
                     uid: user.uid,
                     email: user.email,
@@ -72,16 +109,13 @@ export function signInWithGoogle() {
                     createdAt: serverTimestamp(),
                     lastLogin: serverTimestamp()
                 });
-
-                // Show role selection UI
-                if (window.showRoleSelection) window.showRoleSelection();
+                window.location.href = "/onboarding.html";
             }
-
         }).catch((error) => {
             const errorCode = error.code;
             const errorMessage = error.message;
             console.error("Error during sign in:", errorCode, errorMessage);
             alert("Login failed: " + errorMessage);
-            throw error; // Re-throw to handle UI reset
+            throw error;
         });
 }

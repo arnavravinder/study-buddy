@@ -4,532 +4,1097 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Buddy - Coach Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <title>Coach Dashboard | Study Buddy</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Raleway:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/styles/design-system.css">
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles/mentor-dashboard.css">
-    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script type="importmap">
-    {
-      "imports": {
-        "@stream-io/video-client": "./node_modules/@stream-io/video-client/dist/index.es.js",
-        "webrtc-adapter": "./node_modules/webrtc-adapter/dist/adapter_no_edge.js",
-        "rxjs": "./node_modules/rxjs/dist/esm5/index.js",
-        "rxjs/operators": "./node_modules/rxjs/dist/esm5/operators/index.js",
-        "@protobuf-ts/runtime": "./node_modules/@protobuf-ts/runtime/build/es2015/index.js",
-        "@protobuf-ts/runtime-rpc": "./node_modules/@protobuf-ts/runtime-rpc/build/es2015/index.js",
-        "@protobuf-ts/twirp-transport": "./node_modules/@protobuf-ts/twirp-transport/build/es2015/index.js",
-        "axios": "./node_modules/axios/dist/esm/axios.js",
-        "ua-parser-js": "./node_modules/ua-parser-js/dist/ua-parser.min.js",
-        "sdp-transform": "./node_modules/sdp-transform/lib/index.js"
-      }
-    }
-    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app">
-        <nav class="sidebar" v-if="activeTab !== 'chat'">
-            <div class="logo">
-                <i class="ph-bold ph-chalkboard-teacher"></i>
-                <span>Study Buddy</span>
-            </div>
-
-            <div class="nav-items">
-                <button @click="activeTab = 'overview'" :class="['nav-item', {active: activeTab === 'overview'}]">
-                    <i class="ph-bold ph-house"></i>
-                    Overview
-                </button>
-
-                <button @click="activeTab = 'calendar'" :class="['nav-item', {active: activeTab === 'calendar'}]">
-                    <i class="ph-bold ph-calendar-blank"></i>
-                    Calendar
-                </button>
-
-                <button @click="activeTab = 'students'" :class="['nav-item', {active: activeTab === 'students'}]">
-                    <i class="ph-bold ph-student"></i>
-                    My Students
-                </button>
-
-                <button @click="activeTab = 'subjects'" :class="['nav-item', {active: activeTab === 'subjects'}]">
-                    <i class="ph-bold ph-books"></i>
-                    Teaching Subjects
-                </button>
-
-                <button @click="activeTab = 'chat'" :class="['nav-item', {active: activeTab === 'chat'}]">
-                    <i class="ph-bold ph-robot"></i>
-                    AI Assistant
-                </button>
-
-                <a href="/tools/notes" class="nav-item">
-                    <i class="ph-bold ph-notebook"></i>
-                    Notes
-                </a>
-            </div>
-
-            <div class="sidebar-bottom">
-                <button class="holiday-toggle" @click="toggleHolidayMode" :class="{active: holidayMode}">
-                    <i class="ph-bold ph-sun-horizon"></i>
-                    Holiday Mode
-                </button>
-
-                <div class="profile">
-                    <div class="avatar">
-                        <span>AC</span>
+    <div id="app" v-cloak>
+        <div class="dashboard-layout">
+            <div class="sidebar">
+                <div class="logo">
+                    <span>Study Buddy</span>
+                </div>
+                <div class="nav-menu">
+                    <div class="nav-item" :class="{active: activeTab === 'dashboard'}" @click="activeTab = 'dashboard'">
+                        <i class="ph ph-squares-four"></i>
+                        <span>Overview</span>
                     </div>
-                    <div class="profile-info">
-                        <div class="name">Arjun Coach</div>
-                        <div class="grade">Grade 12 Coach</div>
+                    <div class="nav-item" :class="{active: activeTab === 'students'}" @click="activeTab = 'students'">
+                        <i class="ph ph-users"></i>
+                        <span>My Students</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'schedule'}" @click="activeTab = 'schedule'">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span>Schedule</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'messages'}" @click="activeTab = 'messages'">
+                        <i class="ph ph-chat-circle-dots"></i>
+                        <span>Messages</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'whiteboard'}"
+                        @click="activeTab = 'whiteboard'">
+                        <i class="ph ph-chalkboard-teacher"></i>
+                        <span>Whiteboard</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'sessions'}" @click="activeTab = 'sessions'">
+                        <i class="ph ph-video-camera"></i>
+                        <span>Your Sessions</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'ai'}" @click="activeTab = 'ai'">
+                        <i class="ph ph-sparkle"></i>
+                        <span>AI Assistant</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'notes'}" @click="activeTab = 'notes'">
+                        <i class="ph ph-notebook"></i>
+                        <span>Notes</span>
+                    </div>
+                    <div class="nav-item" :class="{active: activeTab === 'settings'}" @click="activeTab = 'settings'">
+                        <i class="ph ph-gear"></i>
+                        <span>Settings</span>
+                    </div>
+                </div>
+                <div class="user-mini-profile">
+                    <div class="avatar-circle">{{ currentUser?.displayName?.substring(0,2).toUpperCase() || 'ME' }}
+                    </div>
+                    <div class="info" style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 700; font-size: 0.9rem;">{{ currentUser?.displayName || 'Mentor' }}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Mentor</span>
                     </div>
                 </div>
             </div>
-        </nav>
-
-        <main class="main-content" :class="{'ai-mode': activeTab === 'chat'}"
-            :style="activeTab === 'chat' ? 'margin-left: 0; padding: 0; width: 100vw; height: 100vh;' : ''">
-            <div v-if="activeTab === 'overview'" class="overview-tab">
-                <div class="header-section">
-                    <h1>Welcome back, Arjun! 🎯</h1>
-                    <p>Ready to inspire and guide your students today?</p>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="ph-bold ph-users-three"></i>
+            <main class="main-content">
+                <div v-if="activeTab === 'dashboard'">
+                    <div class="header-area">
+                        <div>
+                            <div class="header-date">{{ currentDate }}</div>
+                            <h1 class="header-title">Good {{ greeting }}!</h1>
                         </div>
-                        <div class="stat-content">
-                            <h3>8</h3>
-                            <p>Active Students</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="ph-bold ph-books"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>3</h3>
-                            <p>Teaching Subjects</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="ph-bold ph-check-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>24</h3>
-                            <p>Sessions This Week</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="ph-bold ph-star"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>4.9</h3>
-                            <p>Average Rating</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="next-session-card">
-                    <div class="session-header">
-                        <h2>Next Session</h2>
-                        <div class="time-badge">Today, 3:00 PM</div>
-                    </div>
-                    <div class="session-details">
-                        <div class="session-subject">
-                            <span class="subject-tag chemistry">Chemistry</span>
-                            <h3>Organic Chemistry Basics</h3>
-                            <p>Help Anirudh with molecular structures and reactions</p>
-                        </div>
-                        <div class="student-info">
-                            <div class="student-avatar">
-                                <span>AK</span>
-                            </div>
-                            <div class="student-details">
-                                <div class="student-name">Anirudh Kumar</div>
-                                <div class="student-grade">Grade 10 • Struggling with organic chemistry</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="session-actions">
-                        <button class="btn-secondary">Reschedule</button>
-                        <button class="btn-outline">View Notes</button>
-                        <button class="btn-primary" @click="startMeeting">
-                            <i class="ph-bold ph-video-camera"></i>
-                            Start Meeting
+                        <button class="btn" @click="openScheduleModal">
+                            <i class="ph ph-plus" style="margin-right: 0.5rem;"></i> Schedule Session
                         </button>
                     </div>
-                </div>
-
-                <div class="student-progress-section">
-                    <h2>Student Progress Overview</h2>
-                    <div class="progress-cards">
-                        <div v-for="student in recentStudents" :key="student.id" class="progress-card">
-                            <div class="student-header">
-                                <div class="student-avatar">
-                                    <span>{{ student.initials }}</span>
+                    <div class="bento-grid">
+                        <div class="bento-card">
+                            <div class="card-icon"><i class="ph ph-users"></i></div>
+                            <div>
+                                <div class="card-value">{{ students.length }}</div>
+                                <div class="card-label">Active Students</div>
+                            </div>
+                        </div>
+                        <div class="bento-card">
+                            <div class="card-icon"><i class="ph ph-video-camera"></i></div>
+                            <div>
+                                <div class="card-value">{{ sessions.filter(s => s.dateTime > Date.now() - 30*24*60*60*1000).length }}</div>
+                                <div class="card-label">Sessions this Month</div>
+                            </div>
+                        </div>
+                        <div class="bento-card">
+                            <div class="card-icon"><i class="ph ph-calendar-check"></i></div>
+                            <div>
+                                <div class="card-value">{{ todaySessions.length }}</div>
+                                <div class="card-label">Today's Sessions</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="pendingBookings.length > 0" class="content-section" style="margin-bottom: 2rem;">
+                        <div class="section-label">Session Requests</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div v-for="booking in pendingBookings" :key="booking.id"
+                                style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <div class="avatar-circle"
+                                        style="width: 44px; height: 44px; background: #f3f4f6; color: #333;">
+                                        {{ booking.studentName?.substring(0,2).toUpperCase() || 'ST' }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">{{ booking.studentName }}
+                                        </div>
+                                        <div style="color: #666; font-size: 0.9rem;">
+                                            {{ booking.subject }} • {{ booking.date }} at {{ booking.time }}
+                                            <span v-if="booking.duration" style="color: #999;"> ({{ booking.duration }}min)</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="student-info">
-                                    <div class="student-name">{{ student.name }}</div>
-                                    <div class="student-subject">{{ student.subject }}</div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;"
+                                        @click="approveBooking(booking)">Approve</button>
+                                    <button class="btn-outline" style="padding: 0.5rem 1rem; font-size: 0.85rem;"
+                                        @click="rejectBooking(booking)">Decline</button>
                                 </div>
                             </div>
-                            <div class="progress-metric">
-                                <div class="metric-label">Progress</div>
-                                <div class="metric-value">{{ student.progress }}%</div>
+                        </div>
+                    </div>
+                    <div class="content-section">
+                        <div class="section-label">Today's Sessions</div>
+                        <div class="floating-list">
+                            <div v-for="session in todaySessions" :key="session.id" class="list-item">
+                                <div class="item-left">
+                                    <div class="item-icon"><i class="ph-fill ph-video-camera"></i></div>
+                                    <div>
+                                        <div class="item-primary-text">{{ session.time }}</div>
+                                        <div class="item-secondary-text">{{ session.subject }}</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 2rem;">
+                                    <div class="item-primary-text">{{ session.student }}</div>
+                                    <span class="status-badge status-upcoming">Upcoming</span>
+                                    <button class="btn" @click="startCall(session)" style="padding: 0.5rem 1.25rem;">
+                                        <i class="ph ph-video-camera" style="margin-right: 0.5rem;"></i> Join
+                                    </button>
+                                </div>
                             </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" :style="{width: student.progress + '%'}"></div>
-                            </div>
-                            <div class="student-actions">
-                                <button class="action-btn">Message</button>
-                                <button class="action-btn">Schedule</button>
+                            <div v-if="todaySessions.length === 0"
+                                style="text-align: center; color: #999; padding: 2rem;">
+                                No sessions scheduled for today.
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div v-if="activeTab === 'calendar'" class="calendar-tab">
-                <div class="calendar-header">
-                    <h1>Teaching Schedule</h1>
-                    <div class="calendar-controls">
-                        <button class="calendar-nav" @click="changeMonth(-1)">
-                            <i class="ph-bold ph-caret-left"></i>
+                <div v-if="activeTab === 'students'">
+                    <div class="header-area">
+                        <div>
+                            <div class="header-date">Student Management</div>
+                            <h1 class="header-title">My Students</h1>
+                        </div>
+                    </div>
+                    <div class="student-grid-view">
+                        <div v-for="student in students" :key="student.id" class="student-card-modern">
+                            <div class="avatar-circle">
+                                {{ student.initials }}
+                            </div>
+                            <h3>{{ student.name }}</h3>
+                            <p>{{ student.grade }}</p>
+                            <p style="margin-bottom: 1rem;">{{ student.subject }}</p>
+                            <div style="width: 100%;">
+                                <button class="btn" @click="startChatWithStudent(student)"
+                                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <i class="ph ph-chat-circle"></i> Message
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="activeTab === 'schedule'">
+                    <div class="header-area">
+                        <div>
+                            <div class="header-date">Session Management</div>
+                            <h1 class="header-title">Schedule</h1>
+                        </div>
+                        <button class="btn" @click="openScheduleModal">
+                            <i class="ph ph-plus" style="margin-right: 0.5rem;"></i> New Session
                         </button>
-                        <span class="current-month">{{ currentMonth }}</span>
-                        <button class="calendar-nav" @click="changeMonth(1)">
-                            <i class="ph-bold ph-caret-right"></i>
-                        </button>
                     </div>
-                </div>
-
-                <div class="calendar-view">
-                    <div class="calendar-grid">
-                        <div class="day-header" v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
-                            :key="day">
-                            {{ day }}
-                        </div>
-                        <div v-for="day in calendarDays" :key="day.date"
-                            :class="['calendar-day', {today: day.isToday, 'has-session': day.hasSession}]">
-                            <span class="day-number">{{ day.day }}</span>
-                            <div v-if="day.hasSession" class="session-indicators">
-                                <div class="session-dot" v-for="n in Math.min(day.sessionCount, 3)" :key="n"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="schedule-section">
-                    <div class="today-schedule">
-                        <h2>Today's Schedule</h2>
-                        <div class="session-list">
-                            <div v-for="session in todaysSchedule" :key="session.id" class="session-item">
-                                <div class="session-time">{{ session.time }}</div>
-                                <div class="session-info">
-                                    <div class="session-title">{{ session.subject }} with {{ session.student }}</div>
-                                    <div class="session-topic">{{ session.topic }}</div>
-                                </div>
-                                <button class="start-btn" @click="startMeeting">Start</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="availability">
-                        <h2>My Availability</h2>
-                        <div class="availability-grid">
-                            <div v-for="day in teachingDays" :key="day.name"
-                                :class="['day-card', {available: day.available}]">
-                                <div class="day-name">{{ day.name }}</div>
-                                <div class="day-status">{{ day.available ? 'Available' : 'Unavailable' }}</div>
-                                <div v-if="day.available" class="day-hours">{{ day.hours }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="activeTab === 'students'" class="students-tab">
-                <div class="students-header">
-                    <h1>My Students</h1>
-                    <div class="filter-controls">
-                        <select v-model="studentFilter" class="filter-select">
-                            <option value="all">All Students</option>
-                            <option value="chemistry">Chemistry</option>
-                            <option value="mathematics">Mathematics</option>
-                            <option value="physics">Physics</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="students-grid">
-                    <div v-for="student in filteredStudents" :key="student.id" class="student-card">
-                        <div class="student-header">
-                            <div class="student-avatar">
-                                <span>{{ student.initials }}</span>
-                            </div>
-                            <div class="student-basic-info">
-                                <h3>{{ student.name }}</h3>
-                                <p>{{ student.grade }} • {{ student.subject }}</p>
-                            </div>
-                        </div>
-
-                        <div class="student-stats">
-                            <div class="stat-group">
-                                <div class="stat-item">
-                                    <span class="stat-label">Sessions</span>
-                                    <span class="stat-value">{{ student.sessions }}</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">Progress</span>
-                                    <span class="stat-value">{{ student.progress }}%</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">Rating</span>
-                                    <span class="stat-value">{{ student.rating }}/5</span>
+                    <div class="floating-list">
+                        <div v-for="session in allSessions" :key="session.id" class="list-item">
+                            <div class="item-left">
+                                <div class="item-icon"><i class="ph ph-calendar"></i></div>
+                                <div>
+                                    <div class="item-primary-text">{{ session.date }} at {{ session.time }}</div>
+                                    <div class="item-secondary-text">{{ session.subject }}</div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="progress-section">
-                            <div class="progress-bar">
-                                <div class="progress-fill" :style="{width: student.progress + '%'}"></div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="item-primary-text">{{ session.student }}</div>
+                                <button class="btn" @click="startCall(session)"
+                                    style="padding: 0.5rem 1.25rem;">Join</button>
+                                <button class="icon-btn danger" @click="deleteSession(session.id)">
+                                    <i class="ph ph-trash"></i>
+                                </button>
                             </div>
                         </div>
-
-                        <div class="student-details">
-                            <div class="detail-item">
-                                <strong>Struggles with:</strong> {{ student.struggles }}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Next session:</strong> {{ student.nextSession }}
-                            </div>
-                        </div>
-
-                        <div class="student-actions">
-                            <button class="btn-outline">View Notes</button>
-                            <button class="btn-secondary">Message</button>
-                            <button class="btn-primary">Schedule Session</button>
+                        <div v-if="allSessions.length === 0" style="text-align: center; color: #999; padding: 2rem;">
+                            No upcoming sessions. Click "New Session" to schedule one.
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div v-if="activeTab === 'subjects'" class="subjects-tab">
-                <h1>My Teaching Subjects</h1>
-
-                <div class="subjects-grid">
-                    <div v-for="subject in teachingSubjects" :key="subject.name" class="subject-card">
-                        <div class="subject-header">
-                            <div class="subject-icon">
-                                <i :class="getSubjectIcon(subject.name)"></i>
-                            </div>
-                            <h3>{{ subject.name }}</h3>
-                        </div>
-
-                        <div class="subject-metrics">
-                            <div class="metric">
-                                <span class="metric-label">Students</span>
-                                <span class="metric-value">{{ subject.students }}</span>
-                            </div>
-                            <div class="metric">
-                                <span class="metric-label">Sessions/Week</span>
-                                <span class="metric-value">{{ subject.sessionsPerWeek }}</span>
-                            </div>
-                            <div class="metric">
-                                <span class="metric-label">Avg Rating</span>
-                                <span class="metric-value">{{ subject.rating }}/5</span>
-                            </div>
-                        </div>
-
-                        <div class="confidence-section">
-                            <div class="confidence-label">
-                                <span>My Confidence</span>
-                                <span>{{ subject.confidence }}/5</span>
-                            </div>
-                            <div class="confidence-bar">
-                                <div class="confidence-fill" :style="{width: (subject.confidence / 5) * 100 + '%'}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="topics-section">
-                            <h4>Topics I Teach</h4>
-                            <div class="topics-list">
-                                <span v-for="topic in subject.topics" :key="topic" class="topic-tag">{{ topic }}</span>
-                            </div>
-                        </div>
-
-                        <div class="subject-actions">
-                            <button class="btn-outline">View Students</button>
-                            <button class="btn-primary">Manage Topics</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="activeTab === 'chat'" class="ai-assistant-page"
-                style="height: 100vh; display: flex; background: var(--bg-card);">
-                <!-- History Sidebar -->
-                <div class="ai-history"
-                    style="width: 260px; background: var(--bg-body); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                <div v-if="activeTab === 'messages'"
+                    style="height: 100%; display: grid; grid-template-columns: 320px 1fr; gap: 0; background: white; border-radius: 20px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05); box-shadow: var(--shadow-sm);">
                     <div
-                        style="padding: 1.5rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button @click="activeTab = 'overview'"
-                            style="align-self: flex-start; background: transparent; border: none; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                            <i class="ph-bold ph-arrow-left"></i> Back to Dashboard
-                        </button>
-                        <button @click="startNewChat"
-                            style="width: 100%; border: 1px dashed var(--border-color); background: transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;">
-                            <i class="ph-bold ph-plus"></i> New Chat
-                        </button>
-                    </div>
-                    <div class="history-list" style="flex: 1; overflow-y: auto; padding: 1rem;">
-                        <div
-                            style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Recent</div>
-                        <div v-for="chat in aiHistory" :key="chat.id" class="history-item"
-                            style="padding: 0.75rem; border-radius: 8px; cursor: pointer; color: var(--text-primary); margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
-                            <i class="ph-regular ph-chat-circle"></i>
-                            <span style="font-size: 0.9rem;">{{ chat.title }}</span>
+                        style="border-right: 1px solid rgba(0,0,0,0.05); background: #fafafa; display: flex; flex-direction: column;">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                            <h2
+                                style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">
+                                Messages</h2>
+                            <div style="position: relative;">
+                                <i class="ph ph-magnifying-glass"
+                                    style="position: absolute; left: 12px; top: 12px; color: #999;"></i>
+                                <input type="text" v-model="chatSearch" placeholder="Search students..."
+                                    style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 1px solid #e0e0e0; border-radius: 10px; font-family: 'DM Sans';">
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Chat Area -->
-                <div class="ai-chat-main" style="flex: 1; display: flex; flex-direction: column; position: relative;">
-                    <!-- Empty State / Welcome -->
-                    <div v-if="aiMessages.length === 0"
-                        style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; color: var(--text-primary);">
-                        <div
-                            style="width: 64px; height: 64px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4);">
-                            <i class="ph-fill ph-chalkboard-teacher"></i>
-                        </div>
-                        <h2 style="font-size: 1.75rem; font-weight: 700;">Teaching Assistant AI</h2>
-                        <p style="color: var(--text-secondary); margin-top: -1rem;">Powered by OpenAI</p>
-
-                        <div class="suggestions"
-                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; max-width: 600px; padding: 0 2rem;">
-                            <button @click="sendSuggestion('Create a lesson plan for Thermodynamics')"
-                                class="suggestion-chip"
-                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
-                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Lesson Plan</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Structure a 45 min class
+                        <div style="flex: 1; overflow-y: auto;">
+                            <div v-for="chat in filteredChats" :key="chat.id" @click="selectChat(chat)"
+                                :style="{padding: '1rem 1.5rem', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', background: activeChat && activeChat.id === chat.id ? 'white' : 'transparent', borderLeft: activeChat && activeChat.id === chat.id ? '3px solid var(--text-primary)' : '3px solid transparent'}">
+                                <div style="display: flex; gap: 0.75rem;">
+                                    <div class="avatar-circle"
+                                        style="width: 36px; height: 36px; font-size: 0.8rem; background: #222; color: white;">
+                                        {{ chat.studentName ? chat.studentName.substring(0, 2).toUpperCase() : 'ST' }}
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="font-weight: 600;">{{ chat.studentName }}</span>
+                                            <span style="font-size: 0.75rem; color: #999;">{{ formatMessageTime(chat.lastMessageTime) }}</span>
+                                        </div>
+                                        <div
+                                            style="font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ chat.lastMessage }}</div>
+                                    </div>
                                 </div>
-                            </button>
-                            <button @click="sendSuggestion('Generate 5 quiz questions for Algebra')"
-                                class="suggestion-chip"
-                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
-                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Quiz Generator</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Create practice problems
-                                </div>
-                            </button>
-                            <button @click="sendSuggestion('How to explain gravity to a 10 year old?')"
-                                class="suggestion-chip"
-                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
-                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Simplification Strategy</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedagogical advice</div>
-                            </button>
-                            <button @click="sendSuggestion('Email template for parent update')" class="suggestion-chip"
-                                style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); cursor: pointer; text-align: left; transition: all 0.2s;">
-                                <div style="font-weight: 600; margin-bottom: 0.25rem;">Communication</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Draft professional emails
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Messages -->
-                    <div v-else class="ai-messages-scroll" ref="aiChatScroll"
-                        style="flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                        <div v-for="msg in aiMessages" :key="msg.id"
-                            :style="{alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '70%'}">
-                            <div :style="{
-                                    padding: '1rem 1.5rem', 
-                                    borderRadius: msg.sender === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
-                                    background: msg.sender === 'user' ? 'var(--primary-color)' : 'var(--bg-body)',
-                                    color: msg.sender === 'user' ? 'white' : 'var(--text-primary)',
-                                    boxShadow: 'var(--shadow-card)',
-                                    lineHeight: '1.6'
-                                }">
-                                <div v-if="msg.sender === 'ai'"
-                                    style="display: flex; gap: 0.75rem; margin-bottom: 0.5rem; align-items: center; font-size: 0.85rem; font-weight: 700; opacity: 0.7;">
-                                    <i class="ph-fill ph-chalkboard-teacher"></i> Assistant
-                                </div>
-                                <div v-html="msg.content"></div>
+                            </div>
+                            <div v-if="chats.length === 0" style="padding: 2rem; text-align: center; color: #999;">
+                                <p>No conversations yet</p>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Input Area -->
-                    <div style="padding: 1.5rem 2rem; background: var(--bg-card);">
-                        <div style="position: relative; max-width: 800px; margin: 0 auto;">
-                            <textarea v-model="aiInput" @keyup.enter.prevent="sendAiMessage"
-                                placeholder="Ask for teaching advice, resources, or lesson plans..."
-                                style="width: 100%; padding: 1rem 3rem 1rem 1.5rem; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-body); color: var(--text-primary); resize: none; outline: none; height: 60px; font-family: inherit; box-shadow: var(--shadow-card);"></textarea>
-                            <button @click="sendAiMessage"
-                                style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                                <i class="ph-bold ph-paper-plane-right"></i>
+                    <div style="display: flex; flex-direction: column; height: 100%;">
+                        <div v-if="!activeChat"
+                            style="flex: 1; display: flex; align-items: center; justify-content: center; color: #999;">
+                            <p>Select a conversation to start messaging</p>
+                        </div>
+                        <template v-else>
+                            <div
+                                style="padding: 1rem 2rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div class="avatar-circle" style="background: #222; color: white;">{{ activeChat.studentName ? activeChat.studentName.substring(0, 2).toUpperCase() : 'ST' }}</div>
+                                    <div>
+                                        <div style="font-weight: 700;">{{ activeChat.studentName }}</div>
+                                        <div style="font-size: 0.8rem; color: #22c55e;">Online</div>
+                                    </div>
+                                </div>
+                                <button class="icon-btn" @click="startCall()">
+                                    <i class="ph ph-video-camera"></i>
+                                </button>
+                            </div>
+                            <div class="messages-area"
+                                style="flex: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: white;">
+                                <div v-for="msg in activeMessages" :key="msg.id"
+                                    :style="{alignSelf: msg.senderId === currentUser.uid ? 'flex-end' : 'flex-start', maxWidth: '65%'}">
+                                    <div
+                                        :style="{background: msg.senderId === currentUser.uid ? 'var(--text-primary)' : '#f3f4f6', color: msg.senderId === currentUser.uid ? 'white' : 'var(--text-primary)', padding: '0.75rem 1rem', borderRadius: '16px', fontSize: '0.9rem', lineHeight: '1.5'}">
+                                        {{ msg.text }}
+                                    </div>
+                                    <div :style="{textAlign: msg.senderId === currentUser.uid ? 'right' : 'left'}"
+                                        style="font-size: 0.7rem; color: #999; margin-top: 4px;">{{ formatMessageTime(msg.timestamp) }}</div>
+                                </div>
+                            </div>
+                            <div style="padding: 1.5rem 2rem; border-top: 1px solid #f0f0f0;">
+                                <div
+                                    style="display: flex; gap: 1rem; align-items: center; background: #f9fafb; padding: 0.75rem 1rem; border-radius: 16px; border: 1px solid #eee;">
+                                    <input type="text" placeholder="Type a message..." v-model="newMessage"
+                                        @keyup.enter="sendChatMessage"
+                                        style="flex: 1; border: none; background: transparent; outline: none;">
+                                    <button @click="sendChatMessage"
+                                        style="background: var(--text-primary); border: none; width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <i class="ph ph-paper-plane-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div v-if="activeTab === 'whiteboard'" style="height: 100%;">
+                    <div class="whiteboard-container">
+                        <div class="excalidraw-toolbar">
+                            <button class="ex-tool" :class="{active: wbTool === 'hand'}" @click="wbTool = 'hand'"
+                                title="Pan (H)"><i class="ph ph-hand"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'pointer'}" @click="wbTool = 'pointer'"
+                                title="Selection (1)"><i class="ph ph-cursor"></i></button>
+                            <div class="ex-separator"></div>
+                            <button class="ex-tool" :class="{active: wbTool === 'shape' && wbShape === 'rect'}"
+                                @click="setShape('rect')" title="Rectangle (2)"><i class="ph ph-square"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'shape' && wbShape === 'diamond'}"
+                                @click="setShape('diamond')" title="Diamond (3)"><i class="ph ph-diamond"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'shape' && wbShape === 'circle'}"
+                                @click="setShape('circle')" title="Circle (4)"><i class="ph ph-circle"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'shape' && wbShape === 'arrow'}"
+                                @click="setShape('arrow')" title="Arrow (5)"><i
+                                    class="ph ph-arrow-up-right"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'shape' && wbShape === 'line'}"
+                                @click="setShape('line')" title="Line (6)"><i class="ph ph-minus"></i></button>
+                            <div class="ex-separator"></div>
+                            <button class="ex-tool" :class="{active: wbTool === 'pen'}" @click="selectTool('pen')"
+                                title="Pen (7)"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'text'}" @click="selectTool('text')"
+                                title="Text (8)"><i class="ph ph-text-t"></i></button>
+                            <button class="ex-tool" :class="{active: wbTool === 'eraser'}" @click="selectTool('eraser')"
+                                title="Eraser (0)"><i class="ph ph-eraser"></i></button>
+                            <div class="ex-separator"></div>
+                            <button class="ex-tool laser-tool" :class="{active: wbTool === 'laser'}"
+                                @click="selectTool('laser')" title="Laser (L)"><i
+                                    class="ph ph-cursor-click"></i></button>
+                        </div>
+                        <div class="ex-options-panel" :class="{visible: showOptionsPanel}">
+                            <div class="ex-color-group">
+                                <div class="ex-color" style="background: #1e1e1e;"
+                                    :class="{active: wbColor === '#1e1e1e'}" @click="wbColor = '#1e1e1e'"></div>
+                                <div class="ex-color" style="background: #e03131;"
+                                    :class="{active: wbColor === '#e03131'}" @click="wbColor = '#e03131'"></div>
+                                <div class="ex-color" style="background: #1971c2;"
+                                    :class="{active: wbColor === '#1971c2'}" @click="wbColor = '#1971c2'"></div>
+                                <div class="ex-color" style="background: #2f9e44;"
+                                    :class="{active: wbColor === '#2f9e44'}" @click="wbColor = '#2f9e44'"></div>
+                                <div class="ex-color" style="background: #f59f00;"
+                                    :class="{active: wbColor === '#f59f00'}" @click="wbColor = '#f59f00'"></div>
+                            </div>
+                            <div class="ex-stroke-group">
+                                <button class="ex-stroke-btn" :class="{active: wbSize === 2}" @click="wbSize = 2">
+                                    <div class="dot" style="width: 4px; height: 4px;"></div>
+                                </button>
+                                <button class="ex-stroke-btn" :class="{active: wbSize === 4}" @click="wbSize = 4">
+                                    <div class="dot" style="width: 8px; height: 8px;"></div>
+                                </button>
+                                <button class="ex-stroke-btn" :class="{active: wbSize === 8}" @click="wbSize = 8">
+                                    <div class="dot" style="width: 12px; height: 12px;"></div>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ex-actions">
+                            <span v-if="lastSavedTime"
+                                style="font-size: 0.7rem; color: #999; white-space: nowrap; padding: 0 0.5rem;">{{ formatLastSaved() }}</span>
+                            <button class="ex-action-btn" @click="fetchHistory" title="History"><i
+                                    class="ph ph-clock-counter-clockwise"></i></button>
+                            <button class="ex-action-btn" @click="clearBoard" title="Clear"><i
+                                    class="ph ph-trash"></i></button>
+                            <button class="ex-action-btn" @click="downloadBoard" title="Download"><i
+                                    class="ph ph-download-simple"></i></button>
+                        </div>
+                        <div class="canvas-area" ref="canvasArea" @mousedown="startDrawing" @mousemove="draw"
+                            @mouseup="stopDrawing" @mouseleave="stopDrawing" @click="addText">
+                            <canvas ref="drawCanvas" style="position: absolute; top: 0; left: 0;"></canvas>
+                            <div v-for="(label, i) in textLabels" :key="i" class="floating-label"
+                                :style="{left: label.x + 'px', top: label.y + 'px'}" :contenteditable="label.editing"
+                                @dblclick="label.editing = true; $event.target.focus()"
+                                @blur="label.text = $event.target.innerText; label.editing = false"
+                                @mousedown.stop="startDragLabel($event, i)">{{ label.text }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="activeTab === 'ai'" class="ai-tab-container">
+                    <div
+                        style="background: #fcfcfc; border-right: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                        <div style="padding: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <button @click="aiSidebarTab = 'chats'"
+                                    :style="{background: aiSidebarTab === 'chats' ? '#222' : 'transparent', color: aiSidebarTab === 'chats' ? 'white' : '#666'}"
+                                    style="flex: 1; padding: 0.5rem; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+                                    <i class="ph ph-chats-circle"></i> Chats
+                                </button>
+                                <button @click="aiSidebarTab = 'quizzes'"
+                                    :style="{background: aiSidebarTab === 'quizzes' ? '#222' : 'transparent', color: aiSidebarTab === 'quizzes' ? 'white' : '#666'}"
+                                    style="flex: 1; padding: 0.5rem; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+                                    <i class="ph ph-exam"></i> Quizzes
+                                </button>
+                            </div>
+                            <button v-if="aiSidebarTab === 'chats'" class="btn-outline" @click="startNewChat"
+                                style="width: 100%; padding: 0.5rem; border-radius: 8px; font-size: 0.85rem;">
+                                <i class="ph ph-plus"></i> New Chat
+                            </button>
+                            <button v-else class="btn-outline"
+                                @click="showQuizMode = true; quizTopic = ''; activeQuiz = null; quizMessages = []; quizStep = 'topic'"
+                                style="width: 100%; padding: 0.5rem; border-radius: 8px; font-size: 0.85rem;">
+                                <i class="ph ph-plus"></i> New Quiz
                             </button>
                         </div>
-                        <div
-                            style="text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.75rem;">
-                            AI assistance for educators. Verify content before use.
+                        <div v-if="aiSidebarTab === 'chats'" style="flex: 1; overflow-y: auto; padding: 1rem;">
+                            <div v-if="chatHistory.length === 0"
+                                style="text-align: center; color: #999; font-size: 0.9rem; margin-top: 2rem;">No chats
+                                yet</div>
+                            <div v-for="chat in chatHistory" :key="chat.id" @click="loadChat(chat)"
+                                style="padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; color: #444; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.25rem;"
+                                onmouseover="this.style.background='#eee'"
+                                onmouseout="this.style.background='transparent'">
+                                <i class="ph ph-chat-circle" style="margin-right: 0.5rem;"></i>{{ chat.title || 'Untitled Chat' }}
+                            </div>
+                        </div>
+                        <div v-if="aiSidebarTab === 'quizzes'" style="flex: 1; overflow-y: auto; padding: 1rem;">
+                            <div v-if="savedQuizzes.length === 0"
+                                style="text-align: center; color: #999; font-size: 0.9rem; margin-top: 2rem;">No quizzes
+                                yet</div>
+                            <div v-for="quiz in savedQuizzes" :key="quiz.id"
+                                style="padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; color: #444; margin-bottom: 0.5rem; background: white; border: 1px solid #eee;">
+                                <div style="font-weight: 500; margin-bottom: 0.25rem; cursor: pointer;"
+                                    @click="loadSavedQuiz(quiz)">{{ quiz.title }}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.8rem; color: #999;">{{ quiz.questionCount || 5 }}
+                                        questions</span>
+                                    <button @click.stop="openAssignModal(quiz)"
+                                        style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #f0f0f0; border: none; border-radius: 4px; cursor: pointer;">Assign</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ai-chat-area">
+                        <div v-if="aiSidebarTab === 'chats' && messages.length === 0 && !isAiThinking"
+                            style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; overflow-y: auto;">
+                            <h1 style="font-family: 'Outfit'; font-size: 2.5rem; margin-bottom: 2rem; color: #222;">What
+                                can I help you with?</h1>
+                            <div style="width: 100%; max-width: 600px;">
+                                <div
+                                    style="display: flex; background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 0.75rem 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                                    <textarea v-model="aiInput" @keydown.enter.prevent="sendAiMessage"
+                                        placeholder="Ask about students, schedule, or create content..."
+                                        style="flex: 1; border: none; outline: none; resize: none; font-size: 1.1rem; font-family: 'DM Sans'; min-height: 28px; max-height: 200px;"
+                                        rows="1"></textarea>
+                                    <button class="chat-action-btn" @click="triggerImageUpload"><i class="ph ph-image"
+                                            style="font-size: 1.2rem;"></i></button>
+                                    <input type="file" ref="imageUpload" @change="handleImageUpload" accept="image/*"
+                                        style="display: none;">
+                                    <button class="chat-action-btn" @click="sendAiMessage"
+                                        :disabled="isAiThinking || !aiInput.trim()"><i class="ph-fill ph-arrow-right"
+                                            style="font-size: 1.2rem;"></i></button>
+                                </div>
+                                <div v-if="pendingImage"
+                                    style="margin-top: 0.5rem; padding: 0.5rem; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem;">
+                                    <img :src="pendingImage" style="height: 40px; border-radius: 4px;">
+                                    <span style="font-size: 0.85rem; color: #666;">Image attached</span>
+                                    <button @click="pendingImage = null"
+                                        style="margin-left: auto; background: none; border: none; cursor: pointer;"><i
+                                            class="ph ph-x"></i></button>
+                                </div>
+                                <div
+                                    style="display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: center; flex-wrap: wrap;">
+                                    <button class="chip" @click="aiInput='Who are my students?'; sendAiMessage()"><i
+                                            class="ph ph-users"></i> My Students</button>
+                                    <button class="chip"
+                                        @click="aiInput='What sessions do I have today?'; sendAiMessage()"><i
+                                            class="ph ph-calendar"></i> Today's Schedule</button>
+                                    <button class="chip quiz-chip"
+                                        @click="aiSidebarTab = 'quizzes'; showQuizMode = true"><i
+                                            class="ph ph-exam"></i> Create Quiz</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="aiSidebarTab === 'quizzes' && !activeQuiz"
+                            style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                            <div style="flex: 1; overflow-y: auto; padding: 2rem; padding-bottom: 120px;"
+                                ref="quizChatWindow">
+                                <div v-if="quizMessages.length === 0" style="max-width: 700px; margin: 0 auto;">
+                                    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                                        <div style="flex: 1;">
+                                            <div
+                                                style="background: #f5f5f5; padding: 1rem; border-radius: 12px; line-height: 1.6;">
+                                                Hi! I'll help you create a quiz. <strong>What topic should we
+                                                    cover?</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-for="(msg, index) in quizMessages" :key="index"
+                                    style="max-width: 700px; margin: 0 auto 1.5rem;">
+                                    <div v-if="msg.role === 'user'"
+                                        style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                                        <div
+                                            style="background: #222; color: white; padding: 0.75rem 1rem; border-radius: 12px; max-width: 80%;">
+                                            {{ msg.content }}</div>
+                                    </div>
+                                    <div v-if="msg.role === 'assistant'" style="display: flex; gap: 1rem;">
+                                        <div style="flex: 1;">
+                                            <div style="background: #f5f5f5; padding: 1rem; border-radius: 12px; line-height: 1.6;"
+                                                v-html="msg.content"></div>
+                                            <div v-if="msg.buttons"
+                                                style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
+                                                <button v-for="btn in msg.buttons" :key="btn"
+                                                    @click="handleQuizButton(btn)"
+                                                    style="padding: 0.5rem 1rem; background: white; border: 1px solid #222; border-radius: 8px; cursor: pointer;">{{ btn }}</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="isGeneratingQuiz" style="max-width: 700px; margin: 0 auto; padding: 1rem;">
+                                    <div class="skeleton-loader skeleton-line medium"></div>
+                                    <div class="skeleton-loader skeleton-line long"></div>
+                                </div>
+                            </div>
+                            <div
+                                style="position: absolute; bottom: 0; left: 0; width: 100%; background: white; padding: 2rem; border-top: 1px solid #eee;">
+                                <div style="max-width: 700px; margin: 0 auto; display: flex; gap: 0.5rem;">
+                                    <input v-model="quizInput" @keydown.enter="sendQuizMessage"
+                                        placeholder="Type your response..."
+                                        style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; outline: none;">
+                                    <button @click="sendQuizMessage" class="btn"
+                                        style="padding: 0 1.5rem;">Send</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="activeQuiz" style="flex: 1; overflow-y: auto; padding: 2rem;">
+                            <div style="max-width: 700px; margin: 0 auto;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                    <h2 style="font-family: 'Outfit';">{{ activeQuiz.title }}</h2>
+                                    <button @click="activeQuiz = null" class="btn-outline">Close Quiz</button>
+                                </div>
+                                <div
+                                    style="background: #e5e7eb; border-radius: 10px; height: 8px; margin-bottom: 2rem; overflow: hidden;">
+                                    <div :style="{width: quizProgress + '%'}"
+                                        style="background: #222; height: 100%; transition: width 0.3s;"></div>
+                                </div>
+                                <div v-if="quizComplete"
+                                    style="background: #dcfce7; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; text-align: center;">
+                                    <h3 style="color: #15803d; margin-bottom: 0.5rem;">Quiz Complete!</h3>
+                                    <p style="color: #166534;">You scored {{ quizScore }} out of {{ activeQuiz.questions.length }}</p>
+                                </div>
+                                <div v-for="(q, idx) in activeQuiz.questions" :key="idx"
+                                    style="background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;"
+                                    :style="{borderColor: q.answered ? (q.correct ? '#22c55e' : '#ef4444') : '#e5e7eb'}">
+                                    <h4 style="margin-bottom: 1rem;">{{ idx + 1 }}. {{ q.question }}</h4>
+                                    <div v-if="q.type === 'mcq' || (!q.type && q.options)"
+                                        style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <button v-for="opt in q.options" :key="opt" @click="answerQuestion(idx, opt)"
+                                            :disabled="q.answered" :style="getOptionStyle(q, opt)"
+                                            style="padding: 0.75rem; border-radius: 8px; text-align: left; cursor: pointer;">{{ opt }}</button>
+                                    </div>
+                                    <div v-if="q.type === 'truefalse'" style="display: flex; gap: 0.5rem;">
+                                        <button @click="answerQuestion(idx, 'True')" :disabled="q.answered"
+                                            :style="getOptionStyle(q, 'True')"
+                                            style="flex: 1; padding: 0.75rem; border-radius: 8px; cursor: pointer;">True</button>
+                                        <button @click="answerQuestion(idx, 'False')" :disabled="q.answered"
+                                            :style="getOptionStyle(q, 'False')"
+                                            style="flex: 1; padding: 0.75rem; border-radius: 8px; cursor: pointer;">False</button>
+                                    </div>
+                                    <div v-if="q.type === 'fill'" style="display: flex; gap: 0.5rem;">
+                                        <input v-model="q.userAnswer" :disabled="q.answered"
+                                            @keydown.enter="answerQuestion(idx, q.userAnswer)"
+                                            placeholder="Type your answer..."
+                                            style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                                        <button v-if="!q.answered" @click="answerQuestion(idx, q.userAnswer)"
+                                            class="btn">Submit</button>
+                                    </div>
+                                    <div v-if="q.answered" style="margin-top: 1rem;">
+                                        <div :style="{color: q.correct ? '#15803d' : '#b91c1c'}"
+                                            style="font-weight: 500;">{{ q.correct ? 'Correct!' : 'Incorrect. Answer: ' + q.answer }}</div>
+                                        <div v-if="q.explanation"
+                                            style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">{{ q.explanation }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <template v-if="aiSidebarTab === 'chats' && (messages.length > 0 || isAiThinking)">
+                            <div class="ai-messages-scroll" ref="aiChatWindow">
+                                <div v-for="(msg, index) in messages" :key="index"
+                                    style="max-width: 800px; margin: 0 auto 2rem auto;">
+                                    <div v-if="msg.role === 'user'"
+                                        style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                                        <div
+                                            style="background: #f0f0f0; padding: 0.75rem 1rem; border-radius: 12px; font-size: 1.05rem; max-width: 80%;">
+                                            {{ msg.content }}
+                                            <img v-if="msg.image" :src="msg.image"
+                                                style="max-width: 200px; border-radius: 8px; margin-top: 0.5rem; display: block;">
+                                        </div>
+                                    </div>
+                                    <div v-if="msg.role === 'assistant'" style="display: flex; gap: 1rem;">
+                                        <div style="flex: 1;">
+                                            <span v-if="msg.toolUsed"
+                                                style="display: inline-block; background: #e0e7ff; color: #4f46e5; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.5rem;">
+                                                <i :class="'ph ' + msg.toolIcon" style="margin-right: 0.25rem;"></i>{{ msg.toolUsed }}
+                                            </span>
+                                            <div class="markdown-body ai-response" v-html="renderMarkdown(msg.content)"
+                                                style="font-size: 1rem; line-height: 1.7; color: #333;"></div>
+                                            <img v-if="msg.image" :src="msg.image"
+                                                style="max-width: 100%; border-radius: 12px; margin-top: 1rem;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="isAiThinking" style="max-width: 800px; margin: 0 auto; padding: 1rem;">
+                                    <div v-if="currentToolUsed"
+                                        style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: #4f46e5;">
+                                        <i class="ph ph-circle-notch" style="animation: spin 1s linear infinite;"></i>
+                                        <span style="font-size: 0.9rem;">Using: {{ currentToolUsed.tool }}</span>
+                                    </div>
+                                    <div class="skeleton-loader skeleton-line medium"></div>
+                                    <div class="skeleton-loader skeleton-line long"></div>
+                                </div>
+                            </div>
+                            <div class="ai-input-fixed">
+                                <div
+                                    style="max-width: 800px; margin: 0 auto; display: flex; gap: 0.5rem; background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 0.75rem;">
+                                    <textarea v-model="aiInput" @keydown.enter.prevent="sendAiMessage"
+                                        placeholder="Ask follow-up..."
+                                        style="flex: 1; border: none; outline: none; resize: none; max-height: 200px; font-family: 'DM Sans';"
+                                        rows="1"></textarea>
+                                    <button class="chat-action-btn" @click="triggerImageUpload"><i
+                                            class="ph ph-image"></i></button>
+                                    <button class="chat-action-btn" @click="sendAiMessage"
+                                        :disabled="isAiThinking || !aiInput.trim()"><i
+                                            class="ph-fill ph-arrow-up-right"></i></button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div v-if="activeTab === 'sessions'">
+                    <div class="header-area">
+                        <div>
+                            <div class="header-date">Call History</div>
+                            <h1 class="header-title">Your Sessions</h1>
+                        </div>
+                    </div>
+                    <div class="floating-list">
+                        <div v-for="ct in callTranscripts" :key="ct.id" class="list-item"
+                            style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.75rem;"
+                            @click="ct.expanded = !ct.expanded">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div class="item-left">
+                                    <div class="item-icon"><i class="ph ph-video-camera"></i></div>
+                                    <div>
+                                        <div class="item-primary-text">{{ ct.menteeName || 'Unknown Student' }}</div>
+                                        <div class="item-secondary-text">{{ formatSessionInfo(ct) }}</div>
+                                    </div>
+                                </div>
+                                <i :class="ct.expanded ? 'ph ph-caret-up' : 'ph ph-caret-down'"
+                                    style="color: #999;"></i>
+                            </div>
+                            <div v-if="ct.expanded"
+                                style="background: #f9fafb; border-radius: 12px; padding: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: #444; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"
+                                @click.stop>
+                                {{ ct.transcript || 'No transcript available' }}
+                            </div>
+                        </div>
+                        <div v-if="callTranscripts.length === 0"
+                            style="text-align: center; color: #999; padding: 3rem;">
+                            <i class="ph ph-video-camera"
+                                style="font-size: 2.5rem; margin-bottom: 0.75rem; display: block;"></i>
+                            No session recordings yet. Transcripts will appear here after your calls.
                         </div>
                     </div>
                 </div>
-            </div>
-        </main>
-
-        <div v-if="showMeetingModal" class="meeting-modal" @click.self="leaveMeeting">
-            <div class="modal-content modal-video">
-                <button @click="leaveMeeting" class="modal-close-btn">
-                    <i class="ph-bold ph-x"></i>
-                </button>
-                <div class="meeting-header">
-                    <h2>Chemistry with Anirudh Kumar</h2>
-                    <div class="meeting-status">
-                        <span class="status-indicator"></span>
-                        <span>{{ callStatus }}</span>
+                <div v-if="activeTab === 'notes'" style="height: 100%;">
+                    <div class="notes-layout">
+                        <div class="notes-sidebar">
+                            <div class="notes-sidebar-header">
+                                <h3>Notes</h3>
+                                <button @click="createNewNote" class="btn">
+                                    <i class="ph ph-plus"></i>
+                                </button>
+                            </div>
+                            <div class="notes-list">
+                                <div v-for="note in notes" :key="note.id" class="note-item"
+                                    :class="{active: activeNote && activeNote.id === note.id}"
+                                    @click="selectNote(note)">
+                                    <h4>{{ note.title || 'Untitled' }}</h4>
+                                    <p>{{ note.updatedAt?.toDate ? note.updatedAt.toDate().toLocaleDateString() : 'Just now' }}</p>
+                                </div>
+                                <div v-if="notes.length === 0"
+                                    style="text-align: center; color: #91918e; padding: 2rem; font-size: 0.85rem;">
+                                    No notes yet
+                                </div>
+                            </div>
+                        </div>
+                        <div class="notes-editor">
+                            <div class="notes-editor-header">
+                                <input type="text" v-model="noteTitle" placeholder="Untitled"
+                                    style="font-family: 'Outfit'; font-size: 1.75rem;">
+                                <div style="display: flex; gap: 0.25rem; align-items: center; flex-shrink: 0;">
+                                    <button class="icon-btn" @click="saveNote" :disabled="isNoteSaving" title="Save">
+                                        <i class="ph ph-floppy-disk"></i>
+                                    </button>
+                                    <button v-if="activeNote" class="icon-btn danger" @click="deleteNote(activeNote.id)"
+                                        title="Delete">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="notes-toolbar" @mousedown.prevent>
+                                <button @click="formatBlock('h1')" title="Heading 1"><b>H1</b></button>
+                                <button @click="formatBlock('h2')" title="Heading 2"><b
+                                        style="font-size: 0.8em;">H2</b></button>
+                                <button @click="formatBlock('h3')" title="Heading 3"><b
+                                        style="font-size: 0.7em;">H3</b></button>
+                                <div class="toolbar-sep"></div>
+                                <button @click="formatInline('bold')" title="Bold"><i
+                                        class="ph-bold ph-text-b"></i></button>
+                                <button @click="formatInline('italic')" title="Italic"><i
+                                        class="ph-bold ph-text-italic"></i></button>
+                                <button @click="formatInline('strikethrough')" title="Strikethrough"><i
+                                        class="ph-bold ph-text-strikethrough"></i></button>
+                                <button @click="formatInline('code')" title="Inline code"><i
+                                        class="ph-bold ph-code"></i></button>
+                                <div class="toolbar-sep"></div>
+                                <button @click="formatList('ul')" title="Bullet list"><i
+                                        class="ph-bold ph-list-bullets"></i></button>
+                                <button @click="formatList('ol')" title="Numbered list"><i
+                                        class="ph-bold ph-list-numbers"></i></button>
+                                <div class="toolbar-sep"></div>
+                                <button @click="formatBlock('blockquote')" title="Quote"><i
+                                        class="ph-bold ph-quotes"></i></button>
+                                <button @click="insertDivider()" title="Divider"><i
+                                        class="ph-bold ph-minus"></i></button>
+                                <button @click="insertCodeBlock()" title="Code block"><i
+                                        class="ph-bold ph-code-block"></i></button>
+                            </div>
+                            <div class="notes-editor-content">
+                                <div class="notes-preview" contenteditable="true" ref="noteEditor"
+                                    @input="handleNoteInput" @keydown="handleNoteKeydown" @paste="handleNotePaste">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div id="video-container" class="video-container">
-                    <div id="remote-video" class="remote-video"></div>
-                    <div id="local-video" class="local-video"></div>
+                <div v-if="activeTab === 'settings'" style="height: 100%; overflow-y: auto;">
+                    <div class="settings-container">
+                        <div class="page-header">
+                            <h1>Settings</h1>
+                            <p>Manage your account preferences</p>
+                        </div>
+                        <div class="settings-layout">
+                            <div class="settings-nav">
+                                <div class="settings-nav-item" :class="{active: settingsSection === 'profile'}"
+                                    @click="settingsSection = 'profile'">
+                                    <i class="ph ph-user"></i> Profile
+                                </div>
+                                <div class="settings-nav-item" :class="{active: settingsSection === 'availability'}"
+                                    @click="settingsSection = 'availability'">
+                                    <i class="ph ph-calendar"></i> Availability
+                                </div>
+                                <div class="settings-nav-item" :class="{active: settingsSection === 'notifications'}"
+                                    @click="settingsSection = 'notifications'">
+                                    <i class="ph ph-bell"></i> Notifications
+                                </div>
+                                <div style="margin-top: auto; padding-top: 1rem;">
+                                    <button class="btn-outline" @click="logout"
+                                        style="width: 100%; color: #ef4444; border-color: #fecaca; padding: 0.75rem;">
+                                        <i class="ph ph-sign-out" style="margin-right: 0.5rem;"></i> Sign Out
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="settings-content">
+                                <div v-if="settingsSection === 'profile'" class="settings-section">
+                                    <h2>Profile Settings</h2>
+                                    <p class="section-desc">Update your personal information</p>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Display Name</label>
+                                            <input type="text" :value="currentUser?.displayName || ''"
+                                                placeholder="Your name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Email</label>
+                                            <input type="email" :value="currentUser?.email || ''" disabled>
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label>Bio</label>
+                                            <textarea placeholder="Tell students about yourself..." rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="settingsSection === 'availability'" class="settings-section">
+                                    <h2>Availability</h2>
+                                    <p class="section-desc">Set your available hours for sessions</p>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div v-for="(day, key) in availability" :key="key" class="notification-item">
+                                            <div class="notification-info">
+                                                <h4 style="text-transform: capitalize;">{{ key }}</h4>
+                                                <p v-if="day.enabled">{{ day.start }} - {{ day.end }}</p>
+                                                <p v-else>Not available</p>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                                <input v-if="day.enabled" type="time" v-model="day.start"
+                                                    style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 6px;">
+                                                <input v-if="day.enabled" type="time" v-model="day.end"
+                                                    style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 6px;">
+                                                <label class="toggle">
+                                                    <input type="checkbox" v-model="day.enabled">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button class="btn" @click="saveSettings">Save Availability</button>
+                                    </div>
+                                </div>
+                                <div v-if="settingsSection === 'notifications'" class="settings-section">
+                                    <h2>Notifications</h2>
+                                    <p class="section-desc">Choose what notifications you receive</p>
+                                    <div class="notification-group">
+                                        <div class="notification-item">
+                                            <div class="notification-info">
+                                                <h4>Email Notifications</h4>
+                                                <p>Receive email updates about your sessions</p>
+                                            </div>
+                                            <label class="toggle">
+                                                <input type="checkbox" v-model="settings.emailNotifications">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="notification-item">
+                                            <div class="notification-info">
+                                                <h4>Push Notifications</h4>
+                                                <p>Get notified on your device</p>
+                                            </div>
+                                            <label class="toggle">
+                                                <input type="checkbox" v-model="settings.pushNotifications">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="notification-item">
+                                            <div class="notification-info">
+                                                <h4>Session Reminders</h4>
+                                                <p>Reminder 15 minutes before sessions</p>
+                                            </div>
+                                            <label class="toggle">
+                                                <input type="checkbox" v-model="settings.sessionReminders">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="notification-item">
+                                            <div class="notification-info">
+                                                <h4>Message Alerts</h4>
+                                                <p>Get notified when students message you</p>
+                                            </div>
+                                            <label class="toggle">
+                                                <input type="checkbox" v-model="settings.messageAlerts">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="notification-item">
+                                            <div class="notification-info">
+                                                <h4>Weekly Report</h4>
+                                                <p>Summary of your teaching activity</p>
+                                            </div>
+                                            <label class="toggle">
+                                                <input type="checkbox" v-model="settings.weeklyReport">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button class="btn" @click="saveSettings">Save Notifications</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="video-controls">
-                    <button @click="toggleAudio" :class="['control-btn', {active: isAudioEnabled}]">
-                        <i :class="isAudioEnabled ? 'ph-bold ph-microphone' : 'ph-bold ph-microphone-slash'"></i>
+            </main>
+        </div>
+        <div v-if="showScheduleModal" class="modal-overlay"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div style="background: white; border-radius: 20px; padding: 2rem; width: 500px; max-width: 90vw;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="font-family: 'Outfit'; font-size: 1.5rem;">Schedule Session</h2>
+                    <button @click="showScheduleModal = false"
+                        style="background: none; border: none; cursor: pointer;"><i class="ph ph-x"
+                            style="font-size: 1.5rem;"></i></button>
+                </div>
+                <div class="form-grid" style="grid-template-columns: 1fr;">
+                    <div class="form-group">
+                        <label>Student</label>
+                        <div class="custom-select" :class="{open: dropdowns.student}"
+                            @click.stop="toggleDropdown('student')">
+                            <div class="custom-select-trigger">
+                                <span :class="{placeholder: !newSession.studentId}">{{ newSession.studentId ? students.find(s => s.id === newSession.studentId)?.name || 'Select a student' : 'Select a student' }}</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </div>
+                            <div v-if="dropdowns.student" class="custom-select-dropdown">
+                                <div class="custom-select-option" :class="{selected: newSession.studentId === ''}"
+                                    @click.stop="selectDropdown('student', '', 'newSession', 'studentId')">Select a
+                                    student</div>
+                                <div v-for="student in students" :key="student.id" class="custom-select-option"
+                                    :class="{selected: newSession.studentId === student.id}"
+                                    @click.stop="selectDropdown('student', student.id, 'newSession', 'studentId')">{{ student.name }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" v-model="newSession.subject" placeholder="e.g., Mathematics, Physics">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="text" ref="sessionDatePicker" placeholder="Select date" readonly
+                            style="cursor: pointer;">
+                    </div>
+                    <div class="form-group" v-if="newSession.date">
+                        <label>Time Slot</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <div v-for="slot in availableTimeSlots" :key="slot.time"
+                                @click="slot.available ? (newSession.time = slot.time) : null" :style="{
+                                    padding: '0.6rem 0.5rem',
+                                    borderRadius: '8px',
+                                    textAlign: 'center',
+                                    fontSize: '0.85rem',
+                                    fontFamily: 'DM Sans, sans-serif',
+                                    cursor: slot.available ? 'pointer' : 'not-allowed',
+                                    border: newSession.time === slot.time ? '1.5px solid #111' : '1px solid #e5e7eb',
+                                    background: !slot.available ? '#f3f4f6' : newSession.time === slot.time ? '#111' : '#fafafa',
+                                    color: !slot.available ? '#9ca3af' : newSession.time === slot.time ? 'white' : '#333',
+                                    fontWeight: newSession.time === slot.time ? '600' : '400',
+                                    transition: 'all 0.15s',
+                                    textDecoration: !slot.available ? 'line-through' : 'none'
+                                }">
+                                {{ slot.time }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <div class="custom-select" :class="{open: dropdowns.duration}"
+                            @click.stop="toggleDropdown('duration')">
+                            <div class="custom-select-trigger">
+                                <span>{{ formatDuration(newSession.duration) }}</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </div>
+                            <div v-if="dropdowns.duration" class="custom-select-dropdown">
+                                <div class="custom-select-option" :class="{selected: newSession.duration === '30'}"
+                                    @click.stop="selectDropdown('duration', '30', 'newSession', 'duration')">30 minutes
+                                </div>
+                                <div class="custom-select-option" :class="{selected: newSession.duration === '60'}"
+                                    @click.stop="selectDropdown('duration', '60', 'newSession', 'duration')">60 minutes
+                                </div>
+                                <div class="custom-select-option" :class="{selected: newSession.duration === '90'}"
+                                    @click.stop="selectDropdown('duration', '90', 'newSession', 'duration')">90 minutes
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes (optional)</label>
+                        <textarea v-model="newSession.notes" placeholder="Session agenda or notes..."
+                            rows="2"></textarea>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="btn-outline" @click="showScheduleModal = false" style="flex: 1;">Cancel</button>
+                    <button class="btn" @click="createSession" style="flex: 1;">Schedule</button>
+                </div>
+            </div>
+        </div>
+        <div v-if="showAssignModal" class="modal-overlay"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div style="background: white; border-radius: 20px; padding: 2rem; width: 400px; max-width: 90vw;">
+                <h2 style="font-family: 'Outfit'; margin-bottom: 1rem;">Assign Quiz</h2>
+                <p style="color: #666; margin-bottom: 1.5rem;">Select students to assign "{{ selectedQuizForAssignment?.title }}"</p>
+                <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+                    <div v-for="student in students" :key="student.id"
+                        style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; cursor: pointer;"
+                        @click="selectedStudentsForQuiz.includes(student.id) ? selectedStudentsForQuiz = selectedStudentsForQuiz.filter(s => s !== student.id) : selectedStudentsForQuiz.push(student.id)"
+                        :style="{background: selectedStudentsForQuiz.includes(student.id) ? '#f0f0f0' : 'transparent'}">
+                        <input type="checkbox" :checked="selectedStudentsForQuiz.includes(student.id)"
+                            style="pointer-events: none;">
+                        <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ student.initials }}</div>
+                        <span>{{ student.name }}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-outline" @click="showAssignModal = false" style="flex: 1;">Cancel</button>
+                    <button class="btn" @click="assignQuizToStudents" style="flex: 1;">Assign to {{ selectedStudentsForQuiz.length }} Student(s)</button>
+                </div>
+            </div>
+        </div>
+        <div v-if="showVideoModal" class="modal-overlay"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+            <div
+                style="width: 100%; height: 100%; max-width: 1200px; max-height: 800px; position: relative; padding: 20px;">
+                <div id="remote-video"
+                    style="width: 100%; height: 100%; background: #1a1a1a; border-radius: 16px; overflow: hidden;">
+                </div>
+                <div id="local-video"
+                    style="position: absolute; bottom: 100px; right: 40px; width: 200px; height: 150px; background: #333; border-radius: 12px; overflow: hidden; border: 2px solid white; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                </div>
+                <div v-if="!remoteUser && !isJoiningCall"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center;">
+                    <i class="ph ph-users"
+                        style="font-size: 4rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
+                    <p style="font-size: 1.25rem;">Waiting for student to join...</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.5rem;">Channel: {{ currentChannel }}</p>
+                </div>
+                <div v-if="isJoiningCall"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center;">
+                    <i class="ph ph-circle-notch" style="font-size: 3rem; animation: spin 1s linear infinite;"></i>
+                    <p style="margin-top: 1rem;">Connecting...</p>
+                </div>
+                <div
+                    style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; background: rgba(255,255,255,0.1); backdrop-filter: blur(12px); padding: 12px 24px; border-radius: 50px;">
+                    <button @click="toggleAudio" :style="{background: audioMuted ? '#ef4444' : 'rgba(255,255,255,0.1)'}"
+                        style="width: 50px; height: 50px; border-radius: 50%; border: none; color: white; font-size: 1.25rem; cursor: pointer;">
+                        <i class="ph" :class="audioMuted ? 'ph-microphone-slash' : 'ph-microphone'"></i>
                     </button>
-                    <button @click="toggleVideo" :class="['control-btn', {active: isVideoEnabled}]">
-                        <i :class="isVideoEnabled ? 'ph-bold ph-video-camera' : 'ph-bold ph-video-camera-slash'"></i>
+                    <button @click="toggleVideo" :style="{background: videoMuted ? '#ef4444' : 'rgba(255,255,255,0.1)'}"
+                        style="width: 50px; height: 50px; border-radius: 50%; border: none; color: white; font-size: 1.25rem; cursor: pointer;">
+                        <i class="ph" :class="videoMuted ? 'ph-video-camera-slash' : 'ph-video-camera'"></i>
                     </button>
-                    <button @click="toggleScreenShare" :class="['control-btn', {active: isScreenSharing}]">
-                        <i class="ph-bold ph-monitor"></i>
-                    </button>
-                    <button @click="leaveMeeting" class="control-btn danger">
-                        <i class="ph-bold ph-phone-disconnect"></i>
+                    <button @click="endCall"
+                        style="background: #ef4444; width: 50px; height: 50px; border-radius: 50%; border: none; color: white; font-size: 1.25rem; cursor: pointer;">
+                        <i class="ph ph-phone-disconnect"></i>
                     </button>
                 </div>
             </div>
         </div>
+        <div v-if="showHistoryModal" class="modal-overlay"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div
+                style="background: white; border-radius: 20px; padding: 2rem; width: 500px; max-width: 90vw; max-height: 80vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="font-family: 'Outfit';">Saved Boards</h2>
+                    <button @click="showHistoryModal = false"
+                        style="background: none; border: none; cursor: pointer;"><i class="ph ph-x"
+                            style="font-size: 1.5rem;"></i></button>
+                </div>
+                <div v-if="savedBoards.length === 0" style="text-align: center; color: #999; padding: 2rem;">No saved
+                    boards yet</div>
+                <div v-for="board in savedBoards" :key="board.id" @click="loadBoard(board)"
+                    style="padding: 1rem; border: 1px solid #eee; border-radius: 12px; margin-bottom: 0.5rem; cursor: pointer;"
+                    onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">
+                    <div style="font-weight: 600;">{{ board.name }}</div>
+                    <div style="font-size: 0.8rem; color: #999;">{{ board.createdAt?.toDate ? board.createdAt.toDate().toLocaleString() : 'Unknown' }}</div>
+                </div>
+            </div>
+        </div>
+        <div v-if="showConfirmModal" class="modal-overlay"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 10001; display: flex; justify-content: center; align-items: center;"
+            @click.self="showConfirmModal = false">
+            <div
+                style="background: white; border-radius: 16px; padding: 2rem; width: 380px; max-width: 90vw; text-align: center;">
+                <i class="ph ph-warning-circle"
+                    style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.75rem; display: block;"></i>
+                <h3 style="font-family: 'Outfit'; font-size: 1.25rem; margin-bottom: 0.5rem;">{{ confirmTitle }}</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">{{ confirmMessage }}</p>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn-outline" @click="showConfirmModal = false" style="flex: 1;">Cancel</button>
+                    <button class="btn" @click="confirmModalAction" style="flex: 1; background: #ef4444;">{{ confirmBtnText || 'Delete' }}</button>
+                </div>
+            </div>
+        </div>
+        <div id="toast"
+            :style="{opacity: showToast ? 1 : 0, transform: showToast ? 'translateY(0)' : 'translateY(20px)'}"
+            style="position: fixed; bottom: 20px; right: 20px; background: #222; color: white; padding: 12px 24px; border-radius: 12px; transition: all 0.3s; pointer-events: none; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            {{ toastMessage }}
+        </div>
     </div>
-
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="/scripts/mentor-dashboard.js" type="module"></script>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+    <script type="module" src="/scripts/mentor-dashboard.js"></script>
 </body>
 
 </html>

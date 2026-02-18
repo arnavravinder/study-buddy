@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call - Study Buddy</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: #0f0f0f;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem;
+            border-radius: 24px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top-color: rgba(255, 255, 255, 0.2);
+            border-left-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-brand {
+            font-weight: 400;
+            opacity: 0.8;
+            font-size: 1rem;
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .channel-info {
+            display: none;
+        }
+
+        .video-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 1rem 2rem;
+            max-height: calc(100vh - 180px);
+            position: relative;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .video-container.waiting-mode {
+            display: block;
+        }
+
+        .video-container.waiting-mode #remoteBox {
+            display: none;
+        }
+
+        .video-container.waiting-mode #localBox {
+            position: fixed;
+            bottom: 120px;
+            right: 40px;
+            width: 320px;
+            aspect-ratio: 16/9;
+            z-index: 50;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-container.screen-share-mode {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr auto;
+        }
+
+        .video-container.screen-share-mode #screenShareBox {
+            display: flex;
+            grid-column: 1;
+            grid-row: 1;
+            width: 100%;
+            height: 100%;
+            max-height: calc(100vh - 280px);
+        }
+
+        .video-container.screen-share-mode .video-participants {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        .video-container.screen-share-mode .video-participants .video-box {
+            width: 180px;
+            height: 100px;
+            aspect-ratio: auto;
+        }
+
+        .video-container:not(.screen-share-mode) #screenShareBox {
+            display: none;
+        }
+
+        .video-container:not(.screen-share-mode) .video-participants {
+            display: contents;
+        }
+
+        #screenShareBox {
+            background: rgba(10, 10, 10, 0.8);
+            border: 2px solid rgba(96, 165, 250, 0.5);
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.2);
+        }
+
+        #screenShareBox .video-label {
+            background: rgba(96, 165, 250, 0.8);
+        }
+
+        .waiting-message {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .video-container.waiting-mode .waiting-message {
+            opacity: 1;
+        }
+
+        .waiting-message i {
+            font-size: 5rem;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .waiting-message p {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.4);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-box {
+            background: rgba(20, 20, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-label i {
+            color: #ef4444;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            position: absolute;
+            inset: 0;
+        }
+
+        .video-placeholder i {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 0;
+            animation: pulse-opacity 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-opacity {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .video-placeholder p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .controls {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0 2rem 2rem 2rem;
+            background: rgba(40, 40, 40, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top-color: rgba(255, 255, 255, 0.3);
+            width: fit-content;
+            align-self: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        .control-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn.active-state {}
+
+        .control-btn.muted {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a1a1a;
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .control-btn.end {
+            background: #ff3b30;
+            color: white;
+            width: 80px;
+            border-radius: 40px;
+            border-color: #ff3b30;
+            margin-left: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
+        }
+
+        .control-btn.end:hover {
+            background: #ff453a;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 59, 48, 0.5);
+        }
+
+        .connecting {
+            position: fixed;
+            inset: 0;
+            background: #0f0f0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            z-index: 100;
+        }
+
+        .connecting.hidden {
+            display: none;
+        }
+
+        .connecting i {
+            font-size: 3rem;
+            animation: spin 1s linear infinite;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        #local-video,
+        #remote-video {
+            width: 100%;
+            height: 100%;
+        }
+
+        .settings-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-width: 300px;
+            z-index: 200;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .settings-panel.hidden {
+            display: none;
+        }
+
+        .settings-panel h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings-panel select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .settings-panel select:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .settings-panel select option {
+            background: #222;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="connecting" id="connectingScreen">
+        <div id="joinContent" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+            <i class="ph ph-video-camera" style="font-size: 3rem; color: rgba(255, 255, 255, 0.8);"></i>
+            <p>Ready to join?</p>
+            <button onclick="startCall()" class="control-btn"
+                style="width: auto; padding: 0 2rem; border-radius: 12px; font-size: 1rem; font-weight: 500;">
+                Join Call
+            </button>
+        </div>
+        <div id="loadingContent" style="display: none; flex-direction: column; align-items: center; gap: 1.5rem;">
+            <i class="ph ph-spinner"
+                style="font-size: 3rem; animation: spin 1s linear infinite; color: rgba(255, 255, 255, 0.8);"></i>
+            <p>Connecting...</p>
+        </div>
+        <p id="errorMsg" class="error-msg" style="display: none;"></p>
+    </div>
+    <div id="resumeOverlay" class="connecting hidden" style="background: rgba(0,0,0,0.8);">
+        <div
+            style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; padding: 2rem;">
+            <i class="ph ph-speaker-high" style="font-size: 3rem; color: #fca5a5;"></i>
+            <p style="font-size: 1.2rem;">Audio Issue Detected</p>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); max-width: 300px;">
+                Click below to enable audio. If issues persist, check your microphone permissions.
+            </p>
+            <button onclick="resumeAudioContext()" class="control-btn"
+                style="width: auto; padding: 0 2rem; border-radius: 12px; font-size: 1rem; font-weight: 500; background: #22c55e;">
+                Enable Audio
+            </button>
+            <button onclick="document.getElementById('resumeOverlay').classList.add('hidden')"
+                style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+                Continue Without Audio
+            </button>
+        </div>
+    </div>
+    <header class="header">
+        <h1>
+            <i class="ph ph-video-camera" style="color: #60a5fa;"></i>
+            Video Call
+            <span class="header-brand">Study Buddy</span>
+        </h1>
+        <span class="channel-info" id="channelInfo">Channel: --</span>
+    </header>
+    <div class="video-container waiting-mode" id="videoContainer">
+        <div class="waiting-message">
+            <i class="ph-duotone ph-users-three"></i>
+            <p>Waiting for others to join...</p>
+        </div>
+        <div class="video-box" id="screenShareBox">
+            <div id="screen-share-video"></div>
+            <span class="video-label" id="screenShareLabel">
+                <i class="ph ph-presentation-chart"></i> Screen Share
+            </span>
+        </div>
+        <div class="video-participants">
+            <div class="video-box" id="localBox">
+                <div id="local-video"></div>
+                <div class="video-placeholder" id="localPlaceholder" style="display: none;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                        <i class="ph-duotone ph-camera-slash"></i>
+                        <p>Camera Off</p>
+                    </div>
+                </div>
+                <span class="video-label" id="localLabel">You</span>
+            </div>
+            <div class="video-box" id="remoteBox">
+                <div id="remote-video"></div>
+                <div class="video-placeholder" id="remotePlaceholder" style="display: none;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                        <i class="ph-duotone ph-camera-slash"></i>
+                        <p>Camera Off</p>
+                    </div>
+                </div>
+                <span class="video-label" id="remoteLabel">Remote</span>
+            </div>
+        </div>
+    </div>
+    <div class="controls">
+        <button class="control-btn" id="micBtn" onclick="toggleAudio()" title="Toggle Microphone">
+            <i class="ph ph-microphone"></i>
+        </button>
+        <button class="control-btn" id="camBtn" onclick="toggleVideo()" title="Toggle Camera">
+            <i class="ph ph-video-camera"></i>
+        </button>
+        <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" title="Share Screen">
+            <i class="ph ph-presentation-chart"></i>
+        </button>
+        <button class="control-btn" id="settingsBtn" onclick="toggleSettings()" title="Audio Settings">
+            <i class="ph ph-gear"></i>
+        </button>
+        <button class="control-btn end" onclick="endCall()" title="End Call">
+            <i class="ph ph-phone-disconnect"></i>
+        </button>
+    </div>
+    <div id="settingsPanel" class="settings-panel hidden">
+        <div class="settings-content">
+            <h3><i class="ph ph-microphone"></i> Select Microphone</h3>
+            <select id="micSelect" onchange="changeMicrophone()">
+                <option value="">Loading devices...</option>
+            </select>
+            <h3 style="margin-top: 1rem;"><i class="ph ph-video-camera"></i> Select Camera</h3>
+            <select id="camSelect" onchange="changeCamera()">
+                <option value="">Loading devices...</option>
+            </select>
+        </div>
+    </div>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyDd7wzQGIT5fhXPkgbOugDZw_7CgvU2nCE",
+            authDomain: "sb-inv.firebaseapp.com",
+            projectId: "sb-inv",
+            storageBucket: "sb-inv.firebasestorage.app",
+            messagingSenderId: "763583057791",
+            appId: "1:763583057791:web:d5a5f063302feda541144a",
+            databaseURL: "https://sb-inv-default-rtdb.firebaseio.com"
+        };
+        const fbApp = initializeApp(firebaseConfig, 'callPage');
+        const rtdb = getDatabase(fbApp);
+        window._fbRtdb = rtdb;
+        window._fbRef = ref;
+        window._fbSet = set;
+    </script>
+    <script>
+        // Suppress Agora stats collector errors caused by ad blockers
+        (function () {
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            const suppressPattern = /statscollector|ERR_BLOCKED_BY_CLIENT/i;
+            console.error = function (...args) {
+                if (suppressPattern.test(args.map(String).join(' '))) return;
+                originalError.apply(console, args);
+            };
+            console.warn = function (...args) {
+                if (suppressPattern.test(args.map(String).join(' '))) return;
+                originalWarn.apply(console, args);
+            };
+        })();
+
+        let client = null;
+        let localAudioTrack = null;
+        let localVideoTrack = null;
+        let localScreenTrack = null;
+        let remoteScreenTrack = null;
+        let audioMuted = false;
+        let videoMuted = false;
+        let isScreenSharing = false;
+        let audioUnavailable = false;
+        let remoteUsers = {};
+        let tokenData = null;
+        let audioContextErrorShown = false;
+        let remoteVideoMuted = true;
+        let remoteAudioMuted = true;
+        let screenClient = null;
+        let screenUid = null;
+        AgoraRTC.setLogLevel(2);
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelName = urlParams.get('channel') || 'demo_channel';
+        const mentorName = urlParams.get('mentor') || '';
+        const menteeName = urlParams.get('mentee') || '';
+        const myRole = urlParams.get('role') || '';
+        const myName = myRole === 'mentor' ? mentorName : (myRole === 'mentee' ? menteeName : '');
+        const otherName = myRole === 'mentor' ? menteeName : (myRole === 'mentee' ? mentorName : '');
+
+        if (myName) {
+            document.getElementById('localLabel').textContent = myName;
+        }
+
+        let callRecorder = null;
+        let recordedChunks = [];
+        let recordingMixerCtx = null;
+        let recordingDest = null;
+        let callStartTime = null;
+        let localSourceNode = null;
+        let remoteSourceNode = null;
+
+        function updateRemoteStatus() {
+            const remotePlaceholder = document.getElementById('remotePlaceholder');
+            const remoteLabel = document.getElementById('remoteLabel');
+            const hasRemote = Object.keys(remoteUsers).length > 0;
+
+            remotePlaceholder.style.display = remoteVideoMuted && hasRemote ? 'flex' : 'none';
+
+            if (!hasRemote) {
+                remoteLabel.textContent = otherName || 'Remote';
+                return;
+            }
+            const displayName = otherName || Object.keys(remoteUsers)[0];
+            if (remoteAudioMuted) {
+                remoteLabel.innerHTML = displayName + ' <i class="ph-fill ph-microphone-slash" style="font-size: 0.8rem;"></i>';
+            } else {
+                remoteLabel.textContent = displayName;
+            }
+        }
+
+        function startRecording() {
+            try {
+                recordingMixerCtx = new AudioContext();
+                recordingDest = recordingMixerCtx.createMediaStreamDestination();
+
+                if (localAudioTrack) {
+                    const localStream = new MediaStream([localAudioTrack.getMediaStreamTrack()]);
+                    localSourceNode = recordingMixerCtx.createMediaStreamSource(localStream);
+                    localSourceNode.connect(recordingDest);
+                }
+
+                callRecorder = new MediaRecorder(recordingDest.stream, {
+                    mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? 'audio/webm;codecs=opus' : 'audio/webm'
+                });
+                recordedChunks = [];
+                callRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                callRecorder.start(1000);
+                callStartTime = Date.now();
+                console.log('Call recording started');
+            } catch (e) {
+                console.error('Failed to start call recording:', e);
+            }
+        }
+
+        function addRemoteAudioToMixer(remoteAudioTrack) {
+            if (!recordingMixerCtx || !recordingDest) return;
+            try {
+                const remoteStream = new MediaStream([remoteAudioTrack.getMediaStreamTrack()]);
+                remoteSourceNode = recordingMixerCtx.createMediaStreamSource(remoteStream);
+                remoteSourceNode.connect(recordingDest);
+                console.log('Remote audio added to recording mixer');
+            } catch (e) {
+                console.error('Failed to add remote audio to mixer:', e);
+            }
+        }
+
+        async function stopRecordingAndTranscribe() {
+            if (!callRecorder || callRecorder.state === 'inactive') return;
+            const duration = callStartTime ? Math.round((Date.now() - callStartTime) / 1000) : 0;
+            return new Promise((resolve) => {
+                callRecorder.onstop = async () => {
+                    console.log('Recording stopped, transcribing...');
+                    const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    if (audioBlob.size < 1000) {
+                        console.log('Recording too short, skipping transcription');
+                        resolve();
+                        return;
+                    }
+                    try {
+                        const reader = new FileReader();
+                        const base64 = await new Promise((res, rej) => {
+                            reader.onloadend = () => res(reader.result);
+                            reader.onerror = rej;
+                            reader.readAsDataURL(audioBlob);
+                        });
+                        const response = await fetch('/api/transcribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ audio: base64 })
+                        });
+                        if (!response.ok) throw new Error('Transcription failed: ' + response.status);
+                        const result = await response.json();
+                        let output = result.output || result;
+                        let transcriptText = '';
+                        let chunks = [];
+                        if (output && output.chunks && output.chunks.length > 0) {
+                            chunks = output.chunks;
+                            transcriptText = chunks.map(c => c.text.trim()).join(' ');
+                        } else if (output && output.text) {
+                            transcriptText = output.text;
+                        } else if (typeof output === 'string') {
+                            transcriptText = output;
+                        }
+                        if (transcriptText && window._fbRtdb) {
+                            const safeChannel = channelName.replace(/[.#$/\[\]]/g, '_');
+                            const sessionId = safeChannel + '_' + Date.now();
+                            await window._fbSet(window._fbRef(window._fbRtdb, `callTranscripts/${sessionId}`), {
+                                channelName: channelName,
+                                mentorName: mentorName,
+                                menteeName: menteeName,
+                                duration: duration,
+                                transcript: transcriptText,
+                                chunks: chunks,
+                                createdAt: Date.now()
+                            });
+                            console.log('Transcript saved to Firebase');
+                        }
+                    } catch (e) {
+                        console.error('Transcription/save error:', e);
+                    }
+                    resolve();
+                };
+                callRecorder.stop();
+            });
+        }
+        async function preFetchToken() {
+            try {
+                const uid = Math.floor(Math.random() * 10000);
+                const response = await fetch('/api/agora-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channelName, uid })
+                });
+                if (!response.ok) throw new Error(`Failed to get token: ${response.status}`);
+                const data = await response.json();
+                if (!data.token || !data.appID) throw new Error('Invalid token response');
+                tokenData = { ...data, uid };
+                console.log("Token pre-fetched successfully");
+            } catch (error) {
+                console.error("Token pre-fetch failed:", error);
+                document.getElementById('errorMsg').textContent = "Connection failed. Please refresh.";
+                document.getElementById('errorMsg').style.display = 'block';
+                document.querySelector('#joinContent button').disabled = true;
+                document.querySelector('#joinContent button').style.opacity = 0.5;
+            }
+        }
+        let autoplayFailedDebounce = null;
+        AgoraRTC.onAutoplayFailed = () => {
+            if (autoplayFailedDebounce) return;
+            autoplayFailedDebounce = setTimeout(() => {
+                autoplayFailedDebounce = null;
+            }, 2000);
+            console.warn("Autoplay failed, showing resume overlay.");
+            document.getElementById('resumeOverlay').classList.remove('hidden');
+        };
+        function handleAudioContextError() {
+            if (audioContextErrorShown) return;
+            audioContextErrorShown = true;
+            console.warn("AudioContext error detected, showing resume overlay.");
+            document.getElementById('resumeOverlay').classList.remove('hidden');
+        }
+        async function resumeAudioContext() {
+            const overlay = document.getElementById('resumeOverlay');
+            try {
+                const ctx = AgoraRTC.getAudioContext ? AgoraRTC.getAudioContext() : null;
+                if (ctx && ctx.state !== 'running') {
+                    await ctx.resume();
+                    console.log("AudioContext resumed by user.");
+                }
+                if (!localAudioTrack && client) {
+                    try {
+                        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+                            AEC: false,
+                            AGC: true,
+                            ANS: true
+                        });
+                        await client.publish(localAudioTrack);
+                        audioUnavailable = false;
+                        const micBtn = document.getElementById('micBtn');
+                        micBtn.className = 'control-btn';
+                        micBtn.innerHTML = '<i class="ph ph-microphone"></i>';
+                        console.log("Audio track created after resume!");
+                    } catch (audioErr) {
+                        console.warn("Could not create audio track after resume:", audioErr);
+                    }
+                }
+                overlay.classList.add('hidden');
+                audioContextErrorShown = false;
+            } catch (e) {
+                console.error("Error resuming AudioContext", e);
+                overlay.classList.add('hidden');
+            }
+        }
+        async function startCall() {
+            if (!tokenData) {
+                document.getElementById('joinContent').style.display = 'none';
+                document.getElementById('loadingContent').style.display = 'flex';
+                let attempts = 0;
+                while (!tokenData && attempts < 20) {
+                    await new Promise(r => setTimeout(r, 200));
+                    attempts++;
+                }
+                if (!tokenData) {
+                    alert("Connection timeout. Please refresh.");
+                    return;
+                }
+            }
+            document.getElementById('joinContent').style.display = 'none';
+            document.getElementById('loadingContent').style.display = 'flex';
+            try {
+                localVideoTrack = await AgoraRTC.createCameraVideoTrack({
+                    encoderConfig: "480p_1"
+                });
+                localVideoTrack.play("local-video");
+                await new Promise(r => setTimeout(r, 200));
+                const devices = await AgoraRTC.getMicrophones();
+                console.log("Available microphones:", devices.map(d => d.label));
+                const micConfig = {
+                    AEC: false,
+                    AGC: false,
+                    ANS: false,
+                };
+                if (devices.length > 0) {
+                    micConfig.microphoneId = devices[0].deviceId;
+                    console.log("Using microphone:", devices[0].label);
+                }
+                try {
+                    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack(micConfig);
+                    console.log("Audio track created successfully");
+                } catch (audioErr) {
+                    console.error("Audio track creation failed:", audioErr);
+                    try {
+                        await new Promise(r => setTimeout(r, 300));
+                        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                        console.log("Audio track created with defaults");
+                    } catch (finalErr) {
+                        console.error("Final audio attempt failed:", finalErr);
+                    }
+                }
+                client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                setupClientEvents();
+                await client.join(tokenData.appID, channelName, tokenData.token, tokenData.uid);
+                console.log("Joined channel:", channelName);
+                const tracksToPublish = [];
+                if (localAudioTrack) tracksToPublish.push(localAudioTrack);
+                if (localVideoTrack) tracksToPublish.push(localVideoTrack);
+                if (tracksToPublish.length > 0) {
+                    await client.publish(tracksToPublish);
+                    console.log("Published tracks:", tracksToPublish.length);
+                }
+                if (!localAudioTrack) {
+                    audioUnavailable = true;
+                    const micBtn = document.getElementById('micBtn');
+                    micBtn.classList.add('muted');
+                    micBtn.innerHTML = '<i class="ph ph-microphone-slash"></i>';
+                    micBtn.title = "Microphone unavailable";
+                }
+                document.getElementById('connectingScreen').classList.add('hidden');
+                setTimeout(() => {
+                    try {
+                        const ctx = AgoraRTC.getAudioContext ? AgoraRTC.getAudioContext() : null;
+                        if (ctx && ctx.state === 'suspended') {
+                            ctx.resume().catch(() => { });
+                        }
+                    } catch (e) {
+                        console.warn("Could not check AudioContext state:", e);
+                    }
+                }, 500);
+                startRecording();
+                updateLayout();
+            } catch (error) {
+                console.error("Error starting call:", error);
+                document.getElementById('loadingContent').style.display = 'none';
+                document.getElementById('joinContent').style.display = 'flex';
+                document.getElementById('errorMsg').textContent = error.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+        function setupClientEvents() {
+            client.on("user-published", async (user, mediaType) => {
+                // Ignore our own screen share client
+                if (screenUid && user.uid === screenUid) return;
+
+                console.log("Remote user published:", user.uid, mediaType);
+                await client.subscribe(user, mediaType);
+                remoteUsers[user.uid] = user;
+                updateLayout();
+                if (mediaType === "video") {
+                    const track = user.videoTrack;
+                    const label = track._originMediaStreamTrack?.label?.toLowerCase() || '';
+                    const isScreenShare = label.includes('screen') || label.includes('window') || label.includes('tab');
+                    if (isScreenShare) {
+                        console.log("Remote screen share detected!");
+                        remoteScreenTrack = track;
+                        track.play("screen-share-video");
+                        document.getElementById('screenShareLabel').innerHTML =
+                            '<i class="ph ph-presentation-chart"></i> ' + (user.uid || 'Remote') + ' is sharing';
+                        enableScreenShareMode(true);
+                    } else {
+                        remoteVideoMuted = false;
+                        track.play("remote-video");
+                    }
+                }
+                if (mediaType === "audio") {
+                    remoteAudioMuted = false;
+                    user.audioTrack.play();
+                    addRemoteAudioToMixer(user.audioTrack);
+                }
+                updateRemoteStatus();
+            });
+            client.on("user-unpublished", (user, mediaType) => {
+                if (screenUid && user.uid === screenUid) return;
+
+                console.log("Remote user unpublished:", user.uid, mediaType);
+                if (mediaType === "video") {
+                    if (remoteScreenTrack && user.videoTrack === remoteScreenTrack) {
+                        console.log("Remote screen share stopped");
+                        remoteScreenTrack = null;
+                        if (!isScreenSharing) {
+                            enableScreenShareMode(false);
+                        }
+                    } else {
+                        remoteVideoMuted = true;
+                    }
+                }
+                if (mediaType === "audio") {
+                    remoteAudioMuted = true;
+                }
+                updateRemoteStatus();
+            });
+            client.on("user-info-updated", (uid, msg) => {
+                if (screenUid && uid === screenUid) return;
+                console.log("User info updated:", uid, msg);
+                if (msg === "mute-audio") remoteAudioMuted = true;
+                if (msg === "unmute-audio") remoteAudioMuted = false;
+                if (msg === "mute-video") remoteVideoMuted = true;
+                if (msg === "unmute-video") remoteVideoMuted = false;
+                updateRemoteStatus();
+            });
+            client.on("user-left", (user) => {
+                if (screenUid && user.uid === screenUid) return;
+
+                console.log("Remote user left:", user.uid);
+                delete remoteUsers[user.uid];
+                remoteVideoMuted = true;
+                remoteAudioMuted = true;
+                if (remoteScreenTrack) {
+                    remoteScreenTrack = null;
+                    if (!isScreenSharing) {
+                        enableScreenShareMode(false);
+                    }
+                }
+                updateLayout();
+                updateRemoteStatus();
+            });
+        }
+        function updateLayout() {
+            const container = document.getElementById('videoContainer');
+            const hasRemote = Object.keys(remoteUsers).length > 0;
+            const hasScreenShare = isScreenSharing || remoteScreenTrack;
+            if (hasScreenShare) {
+                container.classList.remove('waiting-mode');
+                return;
+            }
+            if (hasRemote) {
+                container.classList.remove('waiting-mode');
+            } else {
+                container.classList.add('waiting-mode');
+            }
+        }
+        async function toggleAudio() {
+            const btn = document.getElementById('micBtn');
+            const label = document.getElementById('localLabel');
+            if (audioUnavailable && !localAudioTrack) {
+                try {
+                    btn.innerHTML = '<i class="ph ph-spinner" style="animation: spin 1s linear infinite;"></i>';
+                    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+                        AEC: false,
+                        AGC: true,
+                        ANS: true
+                    });
+                    await client.publish(localAudioTrack);
+                    audioUnavailable = false;
+                    audioMuted = false;
+                    btn.className = 'control-btn';
+                    btn.innerHTML = '<i class="ph ph-microphone"></i>';
+                    label.textContent = 'You';
+                    console.log("Audio track created on retry!");
+                    return;
+                } catch (e) {
+                    console.error("Still cannot create audio track:", e);
+                    btn.innerHTML = '<i class="ph ph-microphone-slash"></i>';
+                    return;
+                }
+            }
+            if (localAudioTrack) {
+                audioMuted = !audioMuted;
+                localAudioTrack.setMuted(audioMuted);
+                btn.className = audioMuted ? 'control-btn muted' : 'control-btn';
+                btn.innerHTML = audioMuted ? '<i class="ph ph-microphone-slash"></i>' : '<i class="ph ph-microphone"></i>';
+                if (audioMuted) {
+                    label.innerHTML = 'You <i class="ph-fill ph-microphone-slash" style="font-size: 0.8rem;"></i>';
+                } else {
+                    label.textContent = 'You';
+                }
+            }
+        }
+        async function toggleVideo() {
+            const btn = document.getElementById('camBtn');
+            const localPlaceholder = document.getElementById('localPlaceholder');
+            if (!videoMuted) {
+                if (localVideoTrack) {
+                    await client.unpublish(localVideoTrack);
+                    localVideoTrack.close();
+                    localVideoTrack = null;
+                }
+                videoMuted = true;
+                localPlaceholder.style.display = 'flex';
+                btn.className = 'control-btn muted';
+                btn.innerHTML = '<i class="ph ph-video-camera-slash"></i>';
+            } else {
+                try {
+                    localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+                    localVideoTrack.play("local-video");
+                    await client.publish(localVideoTrack);
+                    videoMuted = false;
+                    videoMuted = false;
+                    localPlaceholder.style.display = 'none';
+                    btn.className = 'control-btn';
+                    btn.innerHTML = '<i class="ph ph-video-camera"></i>';
+                } catch (e) {
+                    console.error("Failed to enable video:", e);
+
+                }
+            }
+        }
+        async function endCall() {
+            await stopRecordingAndTranscribe();
+            if (recordingMixerCtx) {
+                recordingMixerCtx.close().catch(() => { });
+                recordingMixerCtx = null;
+            }
+            if (localAudioTrack) localAudioTrack.close();
+            if (localVideoTrack) localVideoTrack.close();
+            if (localScreenTrack) localScreenTrack.close();
+            if (screenClient) { try { await screenClient.leave(); } catch (_) { } screenClient = null; }
+            if (client) await client.leave();
+            window.close();
+            setTimeout(() => {
+                window.location.href = '/mentor/dashboard';
+            }, 100);
+        }
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                populateDevices();
+            }
+        }
+        async function populateDevices() {
+            const micSelect = document.getElementById('micSelect');
+            const camSelect = document.getElementById('camSelect');
+            try {
+                const mics = await AgoraRTC.getMicrophones();
+                const cams = await AgoraRTC.getCameras();
+                micSelect.innerHTML = mics.map(mic =>
+                    `<option value="${mic.deviceId}" ${localAudioTrack?.getTrackLabel() === mic.label ? 'selected' : ''}>
+                        ${mic.label || 'Microphone ' + (mics.indexOf(mic) + 1)}
+                    </option>`
+                ).join('');
+                camSelect.innerHTML = cams.map(cam =>
+                    `<option value="${cam.deviceId}" ${localVideoTrack?.getTrackLabel() === cam.label ? 'selected' : ''}>
+                        ${cam.label || 'Camera ' + (cams.indexOf(cam) + 1)}
+                    </option>`
+                ).join('');
+            } catch (e) {
+                console.error("Error getting devices:", e);
+            }
+        }
+        async function changeMicrophone() {
+            const micSelect = document.getElementById('micSelect');
+            const newDeviceId = micSelect.value;
+            if (!newDeviceId || !client) return;
+            try {
+                if (localAudioTrack) {
+                    await client.unpublish(localAudioTrack);
+                    localAudioTrack.close();
+                }
+                localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+                    microphoneId: newDeviceId,
+                    AEC: false,
+                    AGC: false,
+                    ANS: false
+                });
+                await client.publish(localAudioTrack);
+                audioMuted = false;
+                audioUnavailable = false;
+                const btn = document.getElementById('micBtn');
+                btn.className = 'control-btn';
+                btn.innerHTML = '<i class="ph ph-microphone"></i>';
+                document.getElementById('localLabel').textContent = 'You';
+                console.log("Switched to microphone:", micSelect.options[micSelect.selectedIndex].text);
+            } catch (e) {
+                console.error("Error changing microphone:", e);
+            }
+        }
+        async function changeCamera() {
+            const camSelect = document.getElementById('camSelect');
+            const newDeviceId = camSelect.value;
+            if (!newDeviceId || !client) return;
+            try {
+                if (localVideoTrack) {
+                    await client.unpublish(localVideoTrack);
+                    localVideoTrack.close();
+                }
+                localVideoTrack = await AgoraRTC.createCameraVideoTrack({
+                    cameraId: newDeviceId,
+                    encoderConfig: "480p_1"
+                });
+                localVideoTrack.play("local-video");
+                await client.publish(localVideoTrack);
+                videoMuted = false;
+                document.getElementById('localPlaceholder').style.display = 'none';
+                const btn = document.getElementById('camBtn');
+                btn.className = 'control-btn';
+                btn.innerHTML = '<i class="ph ph-video-camera"></i>';
+                console.log("Switched to camera:", camSelect.options[camSelect.selectedIndex].text);
+            } catch (e) {
+                console.error("Error changing camera:", e);
+            }
+        }
+        async function fetchScreenShareToken(channel, uid) {
+            const response = await fetch('/api/agora-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelName: channel, uid })
+            });
+            if (!response.ok) throw new Error('Screen share token failed: ' + response.status);
+            return await response.json();
+        }
+
+        async function toggleScreenShare() {
+            const screenBtn = document.getElementById('screenBtn');
+            if (!isScreenSharing) {
+                try {
+                    screenBtn.innerHTML = '<i class="ph ph-spinner" style="animation: spin 1s linear infinite;"></i>';
+
+                    localScreenTrack = await AgoraRTC.createScreenVideoTrack({
+                        encoderConfig: "1080p_1",
+                        optimizationMode: "detail"
+                    }, "disable");
+
+                    localScreenTrack.on("track-ended", () => {
+                        console.log("Screen share ended by user");
+                        stopScreenShare();
+                    });
+
+                    // Create a second client for screen sharing so camera stays active
+                    screenUid = tokenData.uid + 10000;
+                    const screenTokenData = await fetchScreenShareToken(channelName, screenUid);
+
+                    screenClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                    await screenClient.join(screenTokenData.appID, channelName, screenTokenData.token, screenUid);
+                    await screenClient.publish(localScreenTrack);
+
+                    localScreenTrack.play("screen-share-video");
+                    document.getElementById('screenShareLabel').innerHTML = '<i class="ph ph-presentation-chart"></i> You are sharing';
+
+                    enableScreenShareMode(true);
+
+                    isScreenSharing = true;
+                    screenBtn.className = 'control-btn muted';
+                    screenBtn.innerHTML = '<i class="ph ph-presentation-chart"></i>';
+
+                    console.log("Screen sharing started (dual client)");
+                } catch (e) {
+                    console.error("Error starting screen share:", e);
+                    screenBtn.innerHTML = '<i class="ph ph-presentation-chart"></i>';
+                    // Clean up partial state
+                    if (screenClient) {
+                        try { await screenClient.leave(); } catch (_) { }
+                        screenClient = null;
+                    }
+                    if (localScreenTrack) {
+                        localScreenTrack.close();
+                        localScreenTrack = null;
+                    }
+                    screenUid = null;
+                }
+            } else {
+                await stopScreenShare();
+            }
+        }
+
+        async function stopScreenShare() {
+            const screenBtn = document.getElementById('screenBtn');
+            try {
+                if (localScreenTrack) {
+                    if (screenClient) {
+                        await screenClient.unpublish(localScreenTrack);
+                    }
+                    localScreenTrack.close();
+                    localScreenTrack = null;
+                }
+                if (screenClient) {
+                    await screenClient.leave();
+                    screenClient = null;
+                    screenUid = null;
+                }
+
+                if (!remoteScreenTrack) {
+                    enableScreenShareMode(false);
+                }
+
+                isScreenSharing = false;
+                screenBtn.className = 'control-btn';
+                screenBtn.innerHTML = '<i class="ph ph-presentation-chart"></i>';
+                console.log("Screen sharing stopped");
+            } catch (e) {
+                console.error("Error stopping screen share:", e);
+            }
+        }
+        function enableScreenShareMode(enable) {
+            const container = document.getElementById('videoContainer');
+            if (enable) {
+                container.classList.add('screen-share-mode');
+                container.classList.remove('waiting-mode');
+            } else {
+                container.classList.remove('screen-share-mode');
+                updateLayout(); // Re-check if waiting mode needed
+            }
+        }
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('settingsPanel');
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (!panel.contains(e.target) && e.target !== settingsBtn && !settingsBtn.contains(e.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+        preFetchToken();
+        window.addEventListener('beforeunload', () => {
+            if (localAudioTrack) localAudioTrack.close();
+            if (localVideoTrack) localVideoTrack.close();
+            if (localScreenTrack) localScreenTrack.close();
+            if (screenClient) screenClient.leave();
+            if (client) client.leave();
+        });
+    </script>
+</body>
+
+</html>

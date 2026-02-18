@@ -1,7 +1,4 @@
-/* Application Styles - Matching Login Premium Design */
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600&display=swap');
-
-/* Reset & variables */
 :root {
     --primary-color: #111;
     --text-color: #333;
@@ -13,7 +10,6 @@
     --radius-pill: 50px;
     --radius-card: 40px;
 }
-
 body {
     font-family: 'Libre Franklin', sans-serif;
     background: var(--bg-gradient);
@@ -23,25 +19,16 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Centering for single-card flow */
     padding: 20px;
 }
-
 #app {
     width: 100%;
     max-width: 600px;
 }
-
-.container {
-    /* No extra styles needed if app is max-width */
-}
-
-/* Header */
 .header {
     text-align: center;
     margin-bottom: 2rem;
 }
-
 .logo {
     font-size: 2rem;
     font-weight: 600;
@@ -52,14 +39,11 @@ body {
     color: #111;
     margin-bottom: 0.5rem;
 }
-
 .subtitle {
     font-size: 1.1rem;
     font-weight: 300;
     color: #555;
 }
-
-/* Card / Form Container */
 .welcome-slide,
 .form {
     background: var(--card-bg);
@@ -71,43 +55,33 @@ body {
     text-align: center;
     animation: fadeIn 0.5s ease-out;
 }
-
 .form {
     text-align: left;
-    /* Questions left-aligned usually looks better for forms */
 }
-
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
-
-/* Welcome Slide Content */
 .welcome-content h2 {
     font-size: 1.8rem;
     font-weight: 400;
     margin-bottom: 1rem;
 }
-
 .welcome-content p {
     font-weight: 300;
     line-height: 1.6;
     margin-bottom: 2rem;
     color: #444;
 }
-
-/* Buttons */
 button {
     font-family: inherit;
 }
-
 .start-btn,
 .btn-primary {
     width: 100%;
@@ -125,13 +99,11 @@ button {
     gap: 0.5rem;
     transition: transform 0.2s, background 0.2s;
 }
-
 .start-btn:hover,
 .btn-primary:hover {
     transform: translateY(-2px);
     background: #333;
 }
-
 .btn-secondary {
     padding: 1rem 2rem;
     border: 1px solid #ddd;
@@ -146,14 +118,10 @@ button {
     gap: 0.5rem;
     transition: all 0.2s;
 }
-
 .btn-secondary:hover {
     background: #f9f9f9;
     border-color: #bbb;
 }
-
-
-/* Progress Bar */
 .progress-bar {
     height: 6px;
     background: rgba(255, 255, 255, 0.5);
@@ -161,33 +129,26 @@ button {
     margin-bottom: 2rem;
     overflow: hidden;
 }
-
 .progress-fill {
     height: 100%;
     background: #111;
     border-radius: 10px;
     transition: width 0.4s ease;
 }
-
-/* Questions */
 .question {
     text-align: center;
     margin-bottom: 2.5rem;
 }
-
 .question h2 {
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
     color: #111;
 }
-
 .question p {
     color: #666;
     font-weight: 300;
 }
-
-/* Grids */
 .grade-grid,
 .subjects-grid,
 .days-grid,
@@ -198,30 +159,33 @@ button {
     justify-content: center;
     gap: 10px;
 }
-
 .grade-btn,
 .subject-btn,
 .day-btn,
 .number-btn,
 .avg-btn {
-    background: white;
-    border: 1px solid #eee;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0.8rem 1.5rem;
     border-radius: var(--radius-pill);
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s;
+    color: #1a1a1a;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
-
 .grade-btn:hover,
 .subject-btn:hover,
 .day-btn:hover,
 .number-btn:hover,
 .avg-btn:hover {
-    border-color: #aaa;
+    background: rgba(255, 255, 255, 0.4);
+    border-color: #fff;
     transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
-
 .grade-btn.active,
 .subject-btn.active,
 .day-btn.active,
@@ -231,8 +195,6 @@ button {
     color: white;
     border-color: #111;
 }
-
-/* Textarea */
 .topics-textarea {
     width: 100%;
     padding: 1rem;
@@ -243,27 +205,23 @@ button {
     background: rgba(255, 255, 255, 0.8);
     min-height: 120px;
 }
-
 .topics-textarea:focus {
     outline: none;
     border-color: #111;
 }
-
-/* Sliders */
 .confidence-slider {
     text-align: center;
     padding: 1rem 0;
 }
-
 .slider {
     width: 100%;
     -webkit-appearance: none;
+    appearance: none;
     height: 6px;
     background: #ddd;
     border-radius: 5px;
     outline: none;
 }
-
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 24px;
@@ -274,32 +232,67 @@ button {
     border: 3px solid white;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
-
+.rating-visuals {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+    height: 40px;
+    align-items: center;
+}
+.rating-icon {
+    font-size: 2rem;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: rgba(0, 0, 0, 0.2);
+}
+.rating-icon.active {
+    color: #1a1a1a;
+    transform: scale(1.2);
+}
 .slider-labels {
     display: flex;
     justify-content: space-between;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 300;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+    position: relative;
+    width: 100%;
+    padding: 0 5px;
 }
-
-/* Navigation */
+.slider-labels span:nth-child(2) {
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 4px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
 .navigation {
     display: flex;
     justify-content: space-between;
     margin-top: 3rem;
     align-items: center;
 }
-
-/* Submitted State */
 .success-message {
     text-align: center;
 }
-
 .success-icon {
     font-size: 4rem;
     color: #111;
-    /* or a success green if preferred */
     margin-bottom: 1rem;
+    animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

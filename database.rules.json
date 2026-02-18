@@ -1,0 +1,32 @@
+{
+    "rules": {
+        "chats": {
+            ".read": true,
+            ".write": true
+        },
+        "messages": {
+            ".read": true,
+            ".write": true
+        },
+        "sessions": {
+            ".read": true,
+            ".write": true
+        },
+        "bookings": {
+            ".read": true,
+            ".write": true
+        },
+        "notes": {
+            ".read": true,
+            ".write": true
+        },
+        "assignedQuizzes": {
+            ".read": true,
+            ".write": true
+        },
+        "callTranscripts": {
+            ".read": true,
+            ".write": true
+        }
+    }
+}
